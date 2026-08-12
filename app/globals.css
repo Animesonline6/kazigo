@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+* {
+  border-color: theme("colors.border.DEFAULT");
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-surface text-ink font-body antialiased;
+  min-width: 360px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-display text-ink;
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid theme("colors.teal.500");
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background-color: theme("colors.teal.100");
+  color: theme("colors.navy.800");
+}
+
+.container-kazigo {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+.skeleton {
+  @apply relative overflow-hidden bg-surface-muted;
+  background-image: linear-gradient(
+    90deg,
+    rgba(11, 37, 69, 0.04) 0%,
+    rgba(11, 37, 69, 0.09) 50%,
+    rgba(11, 37, 69, 0.04) 100%
+  );
+  background-size: 800px 100%;
+  @apply animate-shimmer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,40 @@
+import type { Company } from "@/types";
+
+export const companies: Company[] = [
+  {
+    id: "c-1",
+    name: "Construtora Horizonte",
+    description: "Empresa de construção civil com projetos residenciais e comerciais em Maputo.",
+    location: { city: "Maputo", province: "Maputo", country: "MZ" },
+    category: "Construção & Reparações",
+    rating: 4.7,
+    reviewsCount: 34,
+    verified: true,
+    foundedYear: 2015,
+    employeeRange: "20-50",
+  },
+  {
+    id: "c-2",
+    name: "Nzuri Digital",
+    description: "Agência digital focada em websites, apps e marketing para negócios moçambicanos.",
+    location: { city: "Maputo", province: "Maputo", country: "MZ" },
+    category: "Tecnologia & Programação",
+    rating: 4.9,
+    reviewsCount: 19,
+    verified: true,
+    foundedYear: 2021,
+    employeeRange: "5-10",
+  },
+  {
+    id: "c-3",
+    name: "Sabor da Terra Catering",
+    description: "Catering para eventos corporativos e casamentos em toda a região sul.",
+    location: { city: "Matola", province: "Maputo", country: "MZ" },
+    category: "Eventos & Catering",
+    rating: 4.6,
+    reviewsCount: 27,
+    verified: false,
+    foundedYear: 2018,
+    employeeRange: "10-20",
+  },
+];
