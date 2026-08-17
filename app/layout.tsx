@@ -33,8 +33,10 @@ export const metadata: Metadata = {
     siteName: "KaziGo",
   },
   icons: {
-    icon: "/icons/favicon.ico",
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

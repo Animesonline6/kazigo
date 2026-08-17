@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
-import { Menu, X, Search, Briefcase } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 const navLinks = [
@@ -17,13 +18,15 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-white/95 backdrop-blur">
       <div className="container-kazigo flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 text-lg font-extrabold text-navy-700">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xs bg-navy-700 text-white">
-            <Briefcase className="h-4 w-4" aria-hidden="true" />
-          </span>
-          <span className="font-display">
-            Kazi<span className="text-teal-500">Go</span>
-          </span>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="KaziGo"
+            width={145}
+            height={40}
+            priority
+            className="h-9 w-auto sm:h-10"
+          />
         </Link>
 
         <nav className="hidden items-center gap-7 md:flex" aria-label="Navegação principal">
@@ -40,7 +43,7 @@ export function Navbar() {
             aria-label="Pesquisar"
             className="flex h-10 w-10 items-center justify-center rounded-sm text-ink-soft hover:bg-surface-muted"
           >
-            <Search className="h-[18px] w-[18px]" />
+            <Search className="h-4.5 w-4.5" />
           </Link>
           <Link href="/login">
             <Button variant="ghost" size="sm">Entrar</Button>

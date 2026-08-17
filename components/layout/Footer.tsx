@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Briefcase, MapPin } from "lucide-react";
+import Image from "next/image";
+import { MapPin } from "lucide-react";
 
 const columns = [
   {
@@ -34,13 +35,8 @@ export function Footer() {
     <footer className="border-t border-border bg-navy-800 text-white">
       <div className="container-kazigo grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
         <div className="flex flex-col gap-3">
-          <Link href="/" className="flex items-center gap-2 text-lg font-extrabold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xs bg-teal-500">
-              <Briefcase className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <span className="font-display">
-              Kazi<span className="text-teal-400">Go</span>
-            </span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo-white.png" alt="KaziGo" width={145} height={40} className="h-9 w-auto" />
           </Link>
           <p className="text-sm font-medium text-navy-100">Encontra. Trabalha. Ganha.</p>
           <p className="flex items-center gap-1.5 text-sm text-navy-200">
