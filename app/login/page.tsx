@@ -1,16 +1,65 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { TextInput, PasswordInput, Checkbox } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { Divider } from "@/components/ui/Divider";
+import { Alert } from "@/components/ui/Alert";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  function handleSubmit(e: React.FormEvent) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const supabase = createClient();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Autenticação real será implementada numa etapa futura (backend).
+    setError(null);
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    setLoading(false);
+
+    if (error) {
+      setError(
+        error.message === "Invalid login credentials"
+          ? "Email ou palavra-passe incorretos."
+          : "Não foi possível entrar. Tenta novamente."
+      );
+      return;
+    }
+
+    const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+    router.push(redirectTo);
+    router.refresh();
+  }
+
+  async function handleGoogleLogin() {
+    setError(null);
+    setGoogleLoading(true);
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setError("Não foi possível entrar com Google. Tenta novamente.");
+      setGoogleLoading(false);
+    }
   }
 
   return (
@@ -24,21 +73,51 @@ export default function LoginPage() {
           <p className="text-sm text-ink-faint">Acede à tua conta para continuar.</p>
         </div>
 
+        {error && (
+          <Alert tone="danger" title="Não foi possível entrar" className="mb-4">
+            {error}
+          </Alert>
+        )}
+
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <TextInput label="Email" type="email" placeholder="tu@email.com" required />
-          <PasswordInput label="Palavra-passe" placeholder="••••••••" required />
+          <TextInput
+            label="Email"
+            type="email"
+            placeholder="tu@email.com"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <PasswordInput
+            label="Palavra-passe"
+            placeholder="••••••••"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
           <div className="flex items-center justify-between">
             <Checkbox label="Manter sessão iniciada" />
-            <Link href="/login" className="text-sm font-medium text-teal-600 hover:underline">
+            <Link href="/recuperar-password" className="text-sm font-medium text-teal-600 hover:underline">
               Esqueceste-te?
             </Link>
           </div>
-          <Button type="submit" fullWidth>Entrar</Button>
+          <Button type="submit" fullWidth disabled={loading}>
+            {loading ? "A entrar..." : "Entrar"}
+          </Button>
         </form>
 
         <Divider label="ou" className="my-6" />
 
-        <p className="text-center text-sm text-ink-faint">
+        <Button
+          variant="outline"
+          fullWidth
+          onClick={handleGoogleLogin}
+          disabled={googleLoading}
+        >
+          {googleLoading ? "A ligar ao Google..." : "Continuar com Google"}
+        </Button>
+
+        <p className="mt-6 text-center text-sm text-ink-faint">
           Ainda não tens conta?{" "}
           <Link href="/registar" className="font-semibold text-navy-700 hover:underline">
             Criar conta
