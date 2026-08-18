@@ -23,6 +23,9 @@ export default function RegistarPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const envMissing =
+    !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
   const [role, setRole] = useState<UserRole>("worker");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -59,11 +62,8 @@ export default function RegistarPage() {
     setLoading(false);
 
     if (error) {
-      setError(
-        error.message.includes("already registered")
-          ? "Este email já está registado. Tenta entrar."
-          : "Não foi possível criar a conta. Tenta novamente."
-      );
+      // MODO DEBUG: mostra o erro real do Supabase para diagnóstico
+      setError(`[DEBUG] ${error.message} (status: ${error.status ?? "?"})`);
       return;
     }
 
@@ -122,6 +122,13 @@ export default function RegistarPage() {
         {error && (
           <Alert tone="danger" title="Não foi possível concluir o registo" className="mb-4">
             {error}
+          </Alert>
+        )}
+
+        {envMissing && (
+          <Alert tone="danger" title="[DEBUG] Configuração em falta" className="mb-4">
+            As variáveis NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY não chegaram ao
+            browser. Confirma as Environment Variables na Vercel e faz Redeploy.
           </Alert>
         )}
 
