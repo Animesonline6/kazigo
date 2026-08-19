@@ -1,86 +1,103 @@
-"use client";
-
-import { useMemo, useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
-import { SearchInput, Select } from "@/components/ui/Input";
-import { JobCard } from "@/components/marketplace/JobCard";
-import { JobCardSkeleton } from "@/components/ui/Skeleton";
+import Link from "next/link";
+import { Users, MapPin, Wifi, Plus } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Pagination } from "@/components/ui/Pagination";
-import { jobs as allJobs, categories } from "@/data/mock";
+import { createClient } from "@/lib/supabase/server";
 
-const PAGE_SIZE = 6;
+export const metadata = { title: "Trabalhos" };
+export const dynamic = "force-dynamic";
 
-export default function TrabalhosPage() {
-  const [query, setQuery] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [page, setPage] = useState(1);
-  const [loading] = useState(false); // reserved for future async fetch state
+function formatBudget(min: number | null, max: number | null) {
+  if (!min && !max) return "A combinar";
+  const fmt = (n: number) => `${n.toLocaleString("pt-PT")} MTn`;
+  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
+  return fmt((min ?? max) as number);
+}
 
-  const filtered = useMemo(() => {
-    return allJobs.filter((job) => {
-      const matchesQuery = job.title.toLowerCase().includes(query.toLowerCase());
-      const matchesCategory = categoryId ? job.categoryId === categoryId : true;
-      return matchesQuery && matchesCategory;
-    });
-  }, [query, categoryId]);
+function formatRelative(dateStr: string) {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (days <= 0) return "hoje";
+  if (days === 1) return "há 1 dia";
+  return `há ${days} dias`;
+}
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+export default async function TrabalhosPage() {
+  const supabase = createClient();
+
+  const { data: jobs } = await supabase
+    .from("jobs")
+    .select("id, title, description, category, city, remote, budget_min, budget_max, applications_count, created_at, status")
+    .eq("status", "aberto")
+    .order("created_at", { ascending: false });
 
   return (
     <div className="container-kazigo py-10 sm:py-14">
-      <div className="mb-8 flex flex-col gap-2">
-        <h1 className="text-2xl font-bold sm:text-3xl">Trabalhos disponíveis</h1>
-        <p className="text-sm text-ink-faint">{filtered.length} oportunidades encontradas em Moçambique.</p>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold sm:text-3xl">Trabalhos disponíveis</h1>
+          <p className="mt-1 text-sm text-ink-faint">
+            {jobs?.length ?? 0} oportunidade{jobs?.length === 1 ? "" : "s"} em aberto.
+          </p>
+        </div>
+        <Link href="/trabalhos/publicar">
+          <Button>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Publicar trabalho
+          </Button>
+        </Link>
       </div>
 
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row">
-        <div className="flex-1">
-          <SearchInput
-            placeholder="Pesquisar por título..."
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-        <div className="sm:w-64">
-          <Select
-            placeholder="Todas as categorias"
-            options={categories.map((c) => ({ value: c.id, label: c.name }))}
-            value={categoryId}
-            onChange={(e) => {
-              setCategoryId(e.target.value);
-              setPage(1);
-            }}
-            aria-label="Filtrar por categoria"
-          />
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <JobCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : paginated.length === 0 ? (
+      {!jobs || jobs.length === 0 ? (
         <EmptyState
-          icon={SlidersHorizontal}
-          title="Nenhum trabalho encontrado"
-          description="Tenta alterar os filtros ou pesquisar por outra palavra-chave."
+          title="Ainda não há trabalhos publicados"
+          description="Sê o primeiro a publicar uma oportunidade na plataforma."
         />
       ) : (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {paginated.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
-          </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} className="mt-10" />
-        </>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {jobs.map((job) => (
+            <Card key={job.id} className="flex flex-col gap-3 p-5 hover:border-teal-500/60 hover:shadow-elevated">
+              <div className="flex items-start justify-between gap-3">
+                <Link href={`/trabalhos/${job.id}`} className="text-base font-semibold text-ink hover:text-navy-700">
+                  {job.title}
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 text-sm text-ink-faint">
+                {job.remote ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Wifi className="h-3.5 w-3.5" aria-hidden="true" />
+                    Remoto
+                  </span>
+                ) : job.city ? (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                    {job.city}
+                  </span>
+                ) : null}
+                <span aria-hidden="true">·</span>
+                <Badge tone="navy">{job.category}</Badge>
+              </div>
+
+              <p className="line-clamp-2 text-sm text-ink-soft">{job.description}</p>
+
+              <div className="mt-1 flex items-center justify-between border-t border-border pt-3">
+                <span className="text-sm font-semibold text-ink">
+                  {formatBudget(job.budget_min, job.budget_max)}
+                </span>
+                <div className="flex items-center gap-3 text-xs text-ink-faint">
+                  <span className="inline-flex items-center gap-1">
+                    <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                    {job.applications_count}
+                  </span>
+                  <span>{formatRelative(job.created_at)}</span>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );

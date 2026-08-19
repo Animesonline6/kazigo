@@ -1,87 +1,102 @@
 import { notFound } from "next/navigation";
-import { Calendar, MapPin } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { MapPin, Wifi, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Divider } from "@/components/ui/Divider";
-import { BudgetDisplay, JobStatusBadge, LocationBadge } from "@/components/marketplace/atoms";
-import { formatRelativeTime } from "@/lib/utils";
-import { jobs, categories } from "@/data/mock";
+import { Badge } from "@/components/ui/Badge";
+import { createClient } from "@/lib/supabase/server";
+import { ApplyButton } from "./ApplyButton";
 
-export function generateStaticParams() {
-  return jobs.map((job) => ({ id: job.id }));
+export const dynamic = "force-dynamic";
+
+function formatBudget(min: number | null, max: number | null) {
+  if (!min && !max) return "A combinar";
+  const fmt = (n: number) => `${n.toLocaleString("pt-PT")} MTn`;
+  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
+  return fmt((min ?? max) as number);
 }
 
-export default function JobDetailPage({ params }: { params: { id: string } }) {
-  const job = jobs.find((j) => j.id === params.id);
+export default async function JobDetailPage({ params }: { params: { id: string } }) {
+  const supabase = createClient();
+
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("id, title, description, category, city, remote, budget_min, budget_max, applications_count, status, client_id")
+    .eq("id", params.id)
+    .single();
+
   if (!job) notFound();
 
-  const category = categories.find((c) => c.id === job.categoryId);
+  const { data: client } = await supabase
+    .from("profiles")
+    .select("full_name, city")
+    .eq("id", job.client_id)
+    .single();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let alreadyApplied = false;
+  if (user) {
+    const { data: existing } = await supabase
+      .from("job_applications")
+      .select("id")
+      .eq("job_id", job.id)
+      .eq("worker_id", user.id)
+      .maybeSingle();
+    alreadyApplied = !!existing;
+  }
 
   return (
-    <div className="container-kazigo grid gap-8 py-10 sm:py-14 lg:grid-cols-[1fr_320px]">
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <JobStatusBadge status={job.status} />
-            {category && <Badge tone="navy">{category.name}</Badge>}
-            {job.featured && <Badge tone="orange">Destaque</Badge>}
+    <div className="container-kazigo max-w-3xl py-10 sm:py-14">
+      <Card className="p-6 sm:p-8">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold sm:text-2xl">{job.title}</h1>
+            <p className="mt-1 text-sm text-ink-faint">
+              Publicado por {client?.full_name ?? "Cliente"}
+            </p>
           </div>
-          <h1 className="text-2xl font-bold sm:text-3xl">{job.title}</h1>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-ink-faint">
-            <LocationBadge location={job.location} />
-            <span aria-hidden="true">·</span>
-            <span className="inline-flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" /> Publicado {formatRelativeTime(job.createdAt)}
-            </span>
-          </div>
+          <Badge tone={job.status === "aberto" ? "success" : "neutral"}>{job.status}</Badge>
         </div>
 
-        <Card className="p-6">
-          <h2 className="mb-3 text-lg font-semibold">Descrição do trabalho</h2>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-ink-soft">{job.description}</p>
+        <div className="mb-6 flex flex-wrap items-center gap-3 text-sm text-ink-faint">
+          {job.remote ? (
+            <span className="inline-flex items-center gap-1">
+              <Wifi className="h-4 w-4" aria-hidden="true" />
+              Remoto
+            </span>
+          ) : job.city ? (
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="h-4 w-4" aria-hidden="true" />
+              {job.city}
+            </span>
+          ) : null}
+          <Badge tone="navy">{job.category}</Badge>
+          <span className="inline-flex items-center gap-1">
+            <Users className="h-4 w-4" aria-hidden="true" />
+            {job.applications_count} candidatura{job.applications_count === 1 ? "" : "s"}
+          </span>
+        </div>
 
-          <Divider className="my-5" />
+        <div className="mb-6 border-t border-border pt-6">
+          <h2 className="mb-2 text-sm font-semibold text-ink">Descrição</h2>
+          <p className="whitespace-pre-line text-sm text-ink-soft">{job.description}</p>
+        </div>
 
-          <h3 className="mb-2 text-sm font-semibold text-ink">Competências necessárias</h3>
-          <div className="flex flex-wrap gap-1.5">
-            {job.skillsRequired.map((skill) => (
-              <Badge key={skill} tone="teal">
-                {skill}
-              </Badge>
-            ))}
-          </div>
-        </Card>
-      </div>
+        <div className="mb-6 flex items-center justify-between rounded-sm bg-surface-subtle p-4">
+          <span className="text-sm text-ink-faint">Orçamento</span>
+          <span className="text-lg font-bold text-ink">
+            {formatBudget(job.budget_min, job.budget_max)}
+          </span>
+        </div>
 
-      <aside className="flex h-fit flex-col gap-4">
-        <Card className="p-6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Orçamento</p>
-          <div className="mt-1 text-xl">
-            <BudgetDisplay budget={job.budget} />
-          </div>
-          <Divider className="my-4" />
-          <dl className="flex flex-col gap-3 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-ink-faint">Cliente</dt>
-              <dd className="font-medium text-ink">{job.clientName}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-ink-faint">Candidaturas</dt>
-              <dd className="font-medium text-ink">{job.applicantsCount}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="flex items-center gap-1 text-ink-faint">
-                <MapPin className="h-3.5 w-3.5" /> Localização
-              </dt>
-              <dd className="font-medium text-ink">{job.location.city}</dd>
-            </div>
-          </dl>
-          <Button fullWidth className="mt-5">
-            Candidatar-me
-          </Button>
-        </Card>
-      </aside>
+        <ApplyButton
+          jobId={job.id}
+          alreadyApplied={alreadyApplied}
+          isOwnJob={user?.id === job.client_id}
+          isLoggedIn={!!user}
+        />
+      </Card>
     </div>
   );
 }
