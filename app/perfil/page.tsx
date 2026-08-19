@@ -1,77 +1,91 @@
-import { BadgeCheck, MapPin, Briefcase } from "lucide-react";
-import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/Card";
-import { RatingStars } from "@/components/marketplace/atoms";
-import { Tabs } from "@/components/ui/Tabs";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { workers } from "@/data/mock";
+import { Badge } from "@/components/ui/Badge";
+import { createClient } from "@/lib/supabase/server";
+import { EditProfileForm } from "./EditProfileForm";
 
 export const metadata = { title: "Perfil" };
+export const dynamic = "force-dynamic";
 
-export default function PerfilPage({ searchParams }: { searchParams: { id?: string } }) {
-  const worker = workers.find((w) => w.id === searchParams.id) ?? workers[0];
+const roleLabel = {
+  worker: "Trabalhador",
+  client: "Cliente",
+  company: "Empresa",
+};
+
+export default async function PerfilPage() {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login?redirectTo=/perfil");
+
+  // Fetch o perfil
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, role, city, avatar_url")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) redirect("/");
+
+  // Fetch dados adicionais
+  let roleData: any = null;
+  if (profile.role === "worker") {
+    const { data } = await supabase
+      .from("worker_profiles")
+      .select("headline, skills, hourly_rate, rating, bio")
+      .eq("id", user.id)
+      .single();
+    roleData = data;
+  } else if (profile.role === "company") {
+    const { data } = await supabase
+      .from("companies")
+      .select("company_name, nuit, sector, employees_range, bio")
+      .eq("id", user.id)
+      .single();
+    roleData = data;
+  }
 
   return (
-    <div className="container-kazigo py-10 sm:py-14">
-      <Card className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <Avatar name={worker.name} size="xl" />
+    <div className="container-kazigo max-w-3xl py-10 sm:py-14">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold sm:text-3xl">O teu perfil</h1>
+        <p className="mt-1 text-sm text-ink-faint">
+          Edita as tuas informações para que os clientes te encontrem melhor.
+        </p>
+      </div>
+
+      {/* Informações básicas (read-only) */}
+      <Card className="mb-6 p-6 sm:p-8">
+        <h2 className="mb-4 text-base font-semibold">Informações básicas</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <div className="flex items-center gap-1.5">
-              <h1 className="text-xl font-bold">{worker.name}</h1>
-              {worker.verified && <BadgeCheck className="h-5 w-5 text-teal-500" aria-label="Verificado" />}
-            </div>
-            <p className="text-sm text-ink-soft">{worker.headline}</p>
-            <div className="mt-1 flex items-center gap-3 text-sm text-ink-faint">
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" /> {worker.location.city}
-              </span>
-              <RatingStars rating={worker.rating} reviewsCount={worker.reviewsCount} />
-            </div>
+            <p className="text-xs text-ink-faint">Nome completo</p>
+            <p className="text-sm font-medium text-ink">{profile.full_name}</p>
+          </div>
+          <div>
+            <p className="text-xs text-ink-faint">Email</p>
+            <p className="text-sm font-medium text-ink">{profile.email}</p>
+          </div>
+          <div>
+            <p className="text-xs text-ink-faint">Tipo de conta</p>
+            <Badge tone="navy" className="mt-1">
+              {roleLabel[profile.role as keyof typeof roleLabel]}
+            </Badge>
           </div>
         </div>
-        <Button>Enviar mensagem</Button>
       </Card>
 
-      <div className="mt-8">
-        <Tabs
-          items={[
-            {
-              value: "sobre",
-              label: "Sobre",
-              content: (
-                <div className="flex flex-col gap-4">
-                  <p className="max-w-2xl text-sm leading-relaxed text-ink-soft">{worker.bio}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {worker.skills.map((skill) => (
-                      <Badge key={skill} tone="teal">{skill}</Badge>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-ink-faint">
-                    <Briefcase className="h-4 w-4" /> {worker.completedJobs} trabalhos concluídos
-                  </div>
-                </div>
-              ),
-            },
-            {
-              value: "portfolio",
-              label: "Portefólio",
-              content: (
-                <EmptyState title="Sem itens no portefólio" description="Este profissional ainda não adicionou trabalhos ao portefólio." />
-              ),
-            },
-            {
-              value: "avaliacoes",
-              label: "Avaliações",
-              content: (
-                <EmptyState title="Sem avaliações ainda" description="As avaliações de clientes aparecerão aqui." />
-              ),
-            },
-          ]}
-        />
-      </div>
+      {/* Informações editáveis */}
+      <EditProfileForm
+        userId={user.id}
+        profile={profile}
+        roleData={roleData}
+        userRole={profile.role}
+      />
     </div>
   );
 }
