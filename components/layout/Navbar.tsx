@@ -2,9 +2,21 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
-import { Menu, X, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  Menu,
+  X,
+  Search,
+  LayoutDashboard,
+  User as UserIcon,
+  LogOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Avatar } from "@/components/ui/Avatar";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { useToast } from "@/components/ui/Toast";
+import { createClient } from "@/lib/supabase/client";
 
 const navLinks = [
   { href: "/trabalhos", label: "Trabalhos" },
@@ -12,8 +24,75 @@ const navLinks = [
   { href: "/como-funciona", label: "Como funciona" },
 ];
 
+type NavProfile = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+};
+
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<NavProfile | null>(null);
+  const [loadingSession, setLoadingSession] = useState(true);
+
+  const supabase = createClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSession() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        if (active) {
+          setProfile(null);
+          setLoadingSession(false);
+        }
+        return;
+      }
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      if (active) {
+        setProfile(data ?? { id: user.id, full_name: null, avatar_url: null });
+        setLoadingSession(false);
+      }
+    }
+
+    loadSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      loadSession();
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setProfile(null);
+    showToast({ tone: "success", title: "Sessão terminada com sucesso" });
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-white/95 backdrop-blur">
@@ -45,12 +124,41 @@ export function Navbar() {
           >
             <Search className="h-4.5 w-4.5" />
           </Link>
-          <Link href="/login">
-            <Button variant="ghost" size="sm">Entrar</Button>
-          </Link>
-          <Link href="/registar">
-            <Button variant="primary" size="sm">Criar conta</Button>
-          </Link>
+
+          {loadingSession ? (
+            <div className="h-9 w-9 animate-pulse rounded-full bg-surface-muted" />
+          ) : profile ? (
+            <Dropdown
+              trigger={<Avatar name={profile.full_name || "Utilizador"} src={profile.avatar_url ?? undefined} size="sm" />}
+              options={[
+                {
+                  label: "Dashboard",
+                  icon: <LayoutDashboard className="h-4 w-4" aria-hidden="true" />,
+                  onSelect: () => router.push("/dashboard"),
+                },
+                {
+                  label: "Perfil",
+                  icon: <UserIcon className="h-4 w-4" aria-hidden="true" />,
+                  onSelect: () => router.push("/perfil"),
+                },
+                {
+                  label: "Sair",
+                  icon: <LogOut className="h-4 w-4" aria-hidden="true" />,
+                  onSelect: handleLogout,
+                  danger: true,
+                },
+              ]}
+            />
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" size="sm">Entrar</Button>
+              </Link>
+              <Link href="/registar">
+                <Button variant="primary" size="sm">Criar conta</Button>
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -79,13 +187,51 @@ export function Navbar() {
               </Link>
             ))}
           </nav>
+
+          {!loadingSession && profile && (
+            <div className="flex items-center gap-3 border-b border-border py-3.5">
+              <Avatar name={profile.full_name || "Utilizador"} src={profile.avatar_url ?? undefined} size="sm" />
+              <span className="text-sm font-semibold text-ink">{profile.full_name || "Utilizador"}</span>
+            </div>
+          )}
+
           <div className="mt-4 flex flex-col gap-2.5">
-            <Link href="/login" onClick={() => setMenuOpen(false)}>
-              <Button variant="outline" fullWidth>Entrar</Button>
-            </Link>
-            <Link href="/registar" onClick={() => setMenuOpen(false)}>
-              <Button variant="primary" fullWidth>Criar conta</Button>
-            </Link>
+            {loadingSession ? null : profile ? (
+              <>
+                <Link href="/dashboard" onClick={() => setMenuOpen(false)}>
+                  <Button variant="outline" fullWidth>
+                    <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <Link href="/perfil" onClick={() => setMenuOpen(false)}>
+                  <Button variant="outline" fullWidth>
+                    <UserIcon className="h-4 w-4" aria-hidden="true" />
+                    Perfil
+                  </Button>
+                </Link>
+                <Button
+                  variant="danger"
+                  fullWidth
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleLogout();
+                  }}
+                >
+                  <LogOut className="h-4 w-4" aria-hidden="true" />
+                  Sair
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setMenuOpen(false)}>
+                  <Button variant="outline" fullWidth>Entrar</Button>
+                </Link>
+                <Link href="/registar" onClick={() => setMenuOpen(false)}>
+                  <Button variant="primary" fullWidth>Criar conta</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
