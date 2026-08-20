@@ -19,9 +19,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { SearchInput } from "@/components/ui/Input";
-import { JobCard } from "@/components/marketplace/JobCard";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { WorkerCard } from "@/components/marketplace/WorkerCard";
-import { categories, jobs, workers } from "@/data/mock";
+import { categories, workers } from "@/data/mock";
+import { createClient } from "@/lib/supabase/server";
+import { Users, MapPin, Wifi } from "lucide-react";
 
 const categoryIcons: Record<string, LucideIcon> = {
   Hammer,
@@ -59,8 +62,33 @@ const steps = [
   },
 ];
 
-export default function HomePage() {
-  const featuredJobs = jobs.filter((job) => job.featured);
+function formatBudget(min: number | null, max: number | null) {
+  if (!min && !max) return "A combinar";
+  const fmt = (n: number) => `${n.toLocaleString("pt-PT")} MTn`;
+  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
+  return fmt((min ?? max) as number);
+}
+
+function formatRelative(dateStr: string) {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (days <= 0) return "hoje";
+  if (days === 1) return "há 1 dia";
+  return `há ${days} dias`;
+}
+
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const supabase = createClient();
+
+  const { data: featuredJobs } = await supabase
+    .from("jobs")
+    .select("id, title, description, category, city, remote, budget_min, budget_max, applications_count, created_at")
+    .eq("status", "aberto")
+    .order("created_at", { ascending: false })
+    .limit(6);
+
   const featuredWorkers = workers.slice(0, 3);
   const popularCategories = categories.slice(0, 8);
 
@@ -158,11 +186,52 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredJobs.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
-          </div>
+          {!featuredJobs || featuredJobs.length === 0 ? (
+            <p className="rounded-md border border-dashed border-border bg-white py-10 text-center text-sm text-ink-faint">
+              Ainda não há trabalhos publicados. Sê o primeiro a publicar uma oportunidade.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredJobs.map((job) => (
+                <Card key={job.id} className="flex flex-col gap-3 p-5 hover:border-teal-500/60 hover:shadow-elevated">
+                  <Link href={`/trabalhos/${job.id}`} className="text-base font-semibold text-ink hover:text-navy-700">
+                    {job.title}
+                  </Link>
+
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-ink-faint">
+                    {job.remote ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Wifi className="h-3.5 w-3.5" aria-hidden="true" />
+                        Remoto
+                      </span>
+                    ) : job.city ? (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                        {job.city}
+                      </span>
+                    ) : null}
+                    <span aria-hidden="true">·</span>
+                    <Badge tone="navy">{job.category}</Badge>
+                  </div>
+
+                  <p className="line-clamp-2 text-sm text-ink-soft">{job.description}</p>
+
+                  <div className="mt-1 flex items-center justify-between border-t border-border pt-3">
+                    <span className="text-sm font-semibold text-ink">
+                      {formatBudget(job.budget_min, job.budget_max)}
+                    </span>
+                    <div className="flex items-center gap-3 text-xs text-ink-faint">
+                      <span className="inline-flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                        {job.applications_count}
+                      </span>
+                      <span>{formatRelative(job.created_at)}</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
 
           <Link href="/trabalhos" className="mt-6 flex items-center justify-center gap-1 text-sm font-semibold text-navy-700 sm:hidden">
             Ver todos os trabalhos <ArrowRight className="h-4 w-4" />
