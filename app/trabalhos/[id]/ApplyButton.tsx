@@ -75,6 +75,16 @@ export function ApplyButton({
       return;
     }
 
+    // Envio de email é "melhor esforço": não bloqueia nem falha a
+    // candidatura se o email não sair (ex: Resend ainda não configurado).
+    fetch("/api/notify/nova-candidatura", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobId, message: message || null }),
+    }).catch(() => {
+      // Silenciosamente ignorado — a candidatura já foi gravada com sucesso.
+    });
+
     setDone(true);
     router.refresh();
   }
