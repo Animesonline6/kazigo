@@ -1,16 +1,19 @@
 import { redirect } from "next/navigation";
+import { CheckCircle2, MapPin } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { AvatarUploader } from "@/components/perfil/AvatarUploader";
 import { createClient } from "@/lib/supabase/server";
 import { EditProfileForm } from "./EditProfileForm";
 
 export const metadata = { title: "Perfil" };
 export const dynamic = "force-dynamic";
 
-const roleLabel = {
+const roleLabel: Record<string, string> = {
   worker: "Trabalhador",
   client: "Cliente",
   company: "Empresa",
+  admin: "Administrador",
 };
 
 export default async function PerfilPage() {
@@ -25,7 +28,7 @@ export default async function PerfilPage() {
   // Fetch o perfil
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, email, role, city, avatar_url")
+    .select("id, full_name, email, role, city, avatar_url, bio, phone, whatsapp, verified")
     .eq("id", user.id)
     .single();
 
@@ -58,6 +61,29 @@ export default async function PerfilPage() {
         </p>
       </div>
 
+      {/* Foto de perfil */}
+      <Card className="mb-6 flex flex-col items-center gap-4 p-6 text-center sm:p-8">
+        <AvatarUploader userId={user.id} fullName={profile.full_name} avatarUrl={profile.avatar_url} />
+        <div>
+          <h2 className="text-lg font-semibold text-ink">{profile.full_name}</h2>
+          <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2">
+            <Badge tone="navy">{roleLabel[profile.role] ?? profile.role}</Badge>
+            {profile.city && (
+              <span className="inline-flex items-center gap-1 text-xs text-ink-faint">
+                <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                {profile.city}
+              </span>
+            )}
+            {profile.verified && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
+                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Email verificado
+              </span>
+            )}
+          </div>
+        </div>
+      </Card>
+
       {/* Informações básicas (read-only) */}
       <Card className="mb-6 p-6 sm:p-8">
         <h2 className="mb-4 text-base font-semibold">Informações básicas</h2>
@@ -73,19 +99,21 @@ export default async function PerfilPage() {
           <div>
             <p className="text-xs text-ink-faint">Tipo de conta</p>
             <Badge tone="navy" className="mt-1">
-              {roleLabel[profile.role as keyof typeof roleLabel]}
+              {roleLabel[profile.role] ?? profile.role}
             </Badge>
           </div>
         </div>
       </Card>
 
       {/* Informações editáveis */}
-      <EditProfileForm
-        userId={user.id}
-        profile={profile}
-        roleData={roleData}
-        userRole={profile.role}
-      />
+      <div id="editar-perfil" className="scroll-mt-20">
+        <EditProfileForm
+          userId={user.id}
+          profile={profile}
+          roleData={roleData}
+          userRole={profile.role}
+        />
+      </div>
     </div>
   );
 }

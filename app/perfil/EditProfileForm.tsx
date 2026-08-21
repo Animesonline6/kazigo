@@ -25,31 +25,42 @@ export function EditProfileForm({
 
   // Campos comuns
   const [city, setCity] = useState(profile.city || "");
+  const [bio, setBio] = useState(profile.bio || "");
+  const [phone, setPhone] = useState(profile.phone || "");
+  const [whatsapp, setWhatsapp] = useState(profile.whatsapp || "");
 
   // Campos worker
   const [headline, setHeadline] = useState(roleData?.headline || "");
   const [skills, setSkills] = useState(roleData?.skills || "");
   const [hourlyRate, setHourlyRate] = useState(roleData?.hourly_rate || "");
-  const [bio, setBio] = useState(roleData?.bio || "");
+  const [workerBio, setWorkerBio] = useState(roleData?.bio || "");
 
   // Campos company
   const [companyName, setCompanyName] = useState(roleData?.company_name || "");
   const [nuit, setNuit] = useState(roleData?.nuit || "");
   const [sector, setSector] = useState(roleData?.sector || "");
   const [employeesRange, setEmployeesRange] = useState(roleData?.employees_range || "");
+  const [companyBio, setCompanyBio] = useState(roleData?.bio || "");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return; // impede múltiplos envios
     setError(null);
     setSuccess(false);
     setLoading(true);
 
     try {
-      // Atualiza profiles
-      if (city !== profile.city) {
+      // Atualiza profiles (localização, bio geral, contactos)
+      const profileChanged =
+        city !== (profile.city || "") ||
+        bio !== (profile.bio || "") ||
+        phone !== (profile.phone || "") ||
+        whatsapp !== (profile.whatsapp || "");
+
+      if (profileChanged) {
         const { error: updateError } = await supabase
           .from("profiles")
-          .update({ city })
+          .update({ city, bio, phone, whatsapp })
           .eq("id", userId);
 
         if (updateError) throw updateError;
@@ -63,7 +74,7 @@ export function EditProfileForm({
             headline,
             skills,
             hourly_rate: hourlyRate ? Number(hourlyRate) : null,
-            bio,
+            bio: workerBio,
           })
           .eq("id", userId);
 
@@ -76,7 +87,7 @@ export function EditProfileForm({
             nuit,
             sector,
             employees_range: employeesRange,
-            bio,
+            bio: companyBio,
           })
           .eq("id", userId);
 
@@ -86,7 +97,7 @@ export function EditProfileForm({
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
-      setError(err.message || "Não foi possível guardar as alterações.");
+      setError(err.message || "Não foi possível guardar as alterações. Tenta novamente.");
     } finally {
       setLoading(false);
     }
@@ -95,7 +106,7 @@ export function EditProfileForm({
   return (
     <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
       {error && (
-        <Alert tone="danger" title="Erro ao guardar">
+        <Alert tone="danger" title="Não foi possível guardar as alterações">
           {error}
         </Alert>
       )}
@@ -106,7 +117,7 @@ export function EditProfileForm({
         </Alert>
       )}
 
-      {/* Campos comuns */}
+      {/* Localização */}
       <Card className="p-6 sm:p-8">
         <h2 className="mb-4 text-base font-semibold">Localização</h2>
         <TextInput
@@ -115,6 +126,42 @@ export function EditProfileForm({
           value={city}
           onChange={(e) => setCity(e.target.value)}
         />
+        <p className="mt-2 text-xs text-ink-faint">
+          Província ainda não disponível — pede ao teu programador para adicionar este campo se precisares dele.
+        </p>
+      </Card>
+
+      {/* Sobre mim (comum a todos os tipos de conta) */}
+      <Card className="p-6 sm:p-8">
+        <h2 className="mb-4 text-base font-semibold">Sobre mim</h2>
+        <TextArea
+          label="Biografia"
+          placeholder="Conta-nos um pouco sobre ti..."
+          rows={4}
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+        />
+      </Card>
+
+      {/* Contacto */}
+      <Card className="p-6 sm:p-8">
+        <h2 className="mb-4 text-base font-semibold">Contacto</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextInput
+            label="Telefone"
+            type="tel"
+            placeholder="Ex: 84 123 4567"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          <TextInput
+            label="WhatsApp"
+            type="tel"
+            placeholder="Ex: 84 123 4567"
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+          />
+        </div>
       </Card>
 
       {/* Worker-specific */}
@@ -143,11 +190,11 @@ export function EditProfileForm({
               onChange={(e) => setHourlyRate(e.target.value)}
             />
             <TextArea
-              label="Sobre ti"
-              placeholder="Fala um pouco sobre ti e a tua experiência..."
+              label="Sobre a tua experiência profissional"
+              placeholder="Fala um pouco sobre a tua experiência e trabalhos anteriores..."
               rows={4}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              value={workerBio}
+              onChange={(e) => setWorkerBio(e.target.value)}
             />
           </div>
         </Card>
@@ -186,8 +233,8 @@ export function EditProfileForm({
               label="Sobre a empresa"
               placeholder="Descreve a tua empresa e a tua experiência..."
               rows={4}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              value={companyBio}
+              onChange={(e) => setCompanyBio(e.target.value)}
             />
           </div>
         </Card>
