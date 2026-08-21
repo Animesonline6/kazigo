@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { TextInput, PasswordInput, Checkbox } from "@/components/ui/Input";
+import { TextInput, PasswordInput } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { Divider } from "@/components/ui/Divider";
 import { Alert } from "@/components/ui/Alert";
@@ -95,8 +95,7 @@ function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <div className="flex items-center justify-between">
-            <Checkbox label="Manter sessão iniciada" />
+          <div className="flex items-center justify-end">
             <Link href="/recuperar-password" className="text-sm font-medium text-teal-600 hover:underline">
               Esqueceste-te?
             </Link>
