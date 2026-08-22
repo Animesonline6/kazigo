@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { MapPin, Wifi, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { FavoriteButton } from "@/components/marketplace/FavoriteButton";
 import { createClient } from "@/lib/supabase/server";
 import { ApplyButton } from "./ApplyButton";
 
@@ -36,6 +37,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   } = await supabase.auth.getUser();
 
   let alreadyApplied = false;
+  let isFavorited = false;
   if (user) {
     const { data: existing } = await supabase
       .from("job_applications")
@@ -44,6 +46,14 @@ export default async function JobDetailPage({ params }: { params: { id: string }
       .eq("worker_id", user.id)
       .maybeSingle();
     alreadyApplied = !!existing;
+
+    const { data: favorite } = await supabase
+      .from("favorites")
+      .select("job_id")
+      .eq("job_id", job.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    isFavorited = !!favorite;
   }
 
   return (
@@ -56,7 +66,10 @@ export default async function JobDetailPage({ params }: { params: { id: string }
               Publicado por {client?.full_name ?? "Cliente"}
             </p>
           </div>
-          <Badge tone={job.status === "aberto" ? "success" : "neutral"}>{job.status}</Badge>
+          <div className="flex items-center gap-3">
+            <Badge tone={job.status === "aberto" ? "success" : "neutral"}>{job.status}</Badge>
+            <FavoriteButton jobId={job.id} userId={user?.id ?? null} initiallyFavorited={isFavorited} />
+          </div>
         </div>
 
         <div className="mb-6 flex flex-wrap items-center gap-3 text-sm text-ink-faint">

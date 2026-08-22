@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FavoriteButton } from "@/components/marketplace/FavoriteButton";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Trabalhos" };
@@ -32,6 +33,20 @@ export default async function TrabalhosPage() {
     .select("id, title, description, category, city, remote, budget_min, budget_max, applications_count, created_at, status")
     .eq("status", "aberto")
     .order("created_at", { ascending: false });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let favoritedJobIds = new Set<string>();
+  if (user && jobs && jobs.length > 0) {
+    const { data: favorites } = await supabase
+      .from("favorites")
+      .select("job_id")
+      .eq("user_id", user.id)
+      .in("job_id", jobs.map((j) => j.id));
+    favoritedJobIds = new Set((favorites ?? []).map((f) => f.job_id));
+  }
 
   return (
     <div className="container-kazigo py-10 sm:py-14">
@@ -63,6 +78,12 @@ export default async function TrabalhosPage() {
                 <Link href={`/trabalhos/${job.id}`} className="text-base font-semibold text-ink hover:text-navy-700">
                   {job.title}
                 </Link>
+                <FavoriteButton
+                  jobId={job.id}
+                  userId={user?.id ?? null}
+                  initiallyFavorited={favoritedJobIds.has(job.id)}
+                  className="shrink-0"
+                />
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-sm text-ink-faint">
