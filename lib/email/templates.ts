@@ -55,3 +55,30 @@ export function novaCandidaturaTemplate({
 
   return { subject, html };
 }
+
+export function candidaturaAceiteTemplate({
+  workerName,
+  clientName,
+  jobTitle,
+  jobUrl,
+}: {
+  workerName: string;
+  clientName: string;
+  jobTitle: string;
+  jobUrl: string;
+}) {
+  const subject = `A tua candidatura para "${jobTitle}" foi aceite`;
+
+  const html = baseLayout(`
+    <p style="margin:0 0 12px;">Olá ${workerName},</p>
+    <p style="margin:0 0 16px;">
+      Boas notícias! <strong>${clientName}</strong> aceitou a tua
+      candidatura para "<strong>${jobTitle}</strong>".
+    </p>
+    <a href="${jobUrl}" style="display:inline-block;background-color:${TEAL};color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:bold;font-size:14px;">
+      Ver trabalho
+    </a>
+  `);
+
+  return { subject, html };
+}
