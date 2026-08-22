@@ -73,6 +73,12 @@ function LoginForm() {
           <p className="text-sm text-ink-faint">Acede à tua conta para continuar.</p>
         </div>
 
+        {searchParams.get("suspensa") === "1" && (
+          <Alert tone="danger" title="Conta suspensa" className="mb-4">
+            A tua conta foi suspensa. Contacta o suporte da KaziGo se achares que isto é um engano.
+          </Alert>
+        )}
+
         {error && (
           <Alert tone="danger" title="Não foi possível entrar" className="mb-4">
             {error}

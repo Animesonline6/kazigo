@@ -47,16 +47,27 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Área de administração: só utilizadores com role "admin" podem entrar.
-  // Sem isto, qualquer conta normal com sessão iniciada conseguia aceder.
-  if (request.nextUrl.pathname.startsWith("/admin") && user) {
+  // Uma única leitura do perfil, reutilizada para a verificação de
+  // conta suspensa (todas as rotas protegidas) e de admin (só /admin).
+  if (isProtected && user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, is_suspended")
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (profile?.is_suspended) {
+      await supabase.auth.signOut();
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/login";
+      redirectUrl.search = "";
+      redirectUrl.searchParams.set("suspensa", "1");
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Área de administração: só utilizadores com role "admin" podem entrar.
+    // Sem isto, qualquer conta normal com sessão iniciada conseguia aceder.
+    if (request.nextUrl.pathname.startsWith("/admin") && profile?.role !== "admin") {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/";
       redirectUrl.search = "";

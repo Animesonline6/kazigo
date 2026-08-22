@@ -1,4 +1,5 @@
-import { Users, Briefcase, FileCheck2, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { Users, Briefcase, FileCheck2, TrendingUp, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
@@ -83,6 +84,21 @@ export default async function AdminPage() {
         ))}
       </div>
 
+      <Link href="/admin/utilizadores" className="mb-10 block">
+        <Card className="flex items-center justify-between p-5 hover:border-teal-500/60">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-sm bg-teal-50 text-teal-700">
+              <Users className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-ink">Gerir utilizadores</p>
+              <p className="text-xs text-ink-faint">Ver, pesquisar e suspender contas</p>
+            </div>
+          </div>
+          <ArrowRight className="h-4 w-4 text-ink-faint" aria-hidden="true" />
+        </Card>
+      </Link>
+
       <h2 className="mb-4 text-lg font-semibold">Trabalhos recentes</h2>
       {jobs.length === 0 ? (
         <p className="text-sm text-ink-faint">Ainda não há trabalhos publicados na plataforma.</p>
@@ -116,7 +132,7 @@ export default async function AdminPage() {
       )}
 
       <p className="mt-8 text-xs text-ink-faint">
-        Gestão de utilizadores e denúncias ainda não estão disponíveis nesta área — vêm numa próxima atualização.
+        Denúncias ainda não estão disponíveis nesta área — vêm numa próxima atualização.
       </p>
     </div>
   );
