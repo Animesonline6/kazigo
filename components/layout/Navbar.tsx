@@ -143,13 +143,13 @@ export function Navbar() {
           ) : profile ? (
             <>
               {profile.role === "admin" && (
-                <Link
+                <a
                   href="/admin"
                   aria-label="Administração"
                   className="flex h-10 w-10 items-center justify-center rounded-sm text-ink-soft hover:bg-surface-muted"
                 >
                   <Shield className="h-4.5 w-4.5" aria-hidden="true" />
-                </Link>
+                </a>
               )}
               <NotificationButton userId={profile.id} />
               <Dropdown
@@ -235,10 +235,10 @@ export function Navbar() {
                 Dashboard
               </Link>
               {profile.role === "admin" && (
-                <Link href="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 border-b border-border py-3.5 text-sm font-medium text-ink">
+                <a href="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 border-b border-border py-3.5 text-sm font-medium text-ink">
                   <Shield className="h-4 w-4 text-ink-faint" aria-hidden="true" />
                   Administração
-                </Link>
+                </a>
               )}
               {canPublish && (
                 <Link href="/trabalhos/publicar" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 border-b border-border py-3.5 text-sm font-medium text-ink">
