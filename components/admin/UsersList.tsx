@@ -12,6 +12,7 @@ export interface AdminUser {
   id: string;
   full_name: string | null;
   email: string;
+  phone?: string | null;
   role: string;
   city: string | null;
   avatar_url: string | null;
@@ -34,6 +35,12 @@ const roleFilters = [
   { value: "admin", label: "Admins" },
 ];
 
+const estadoFilters = [
+  { value: "all", label: "Qualquer estado" },
+  { value: "ativo", label: "Ativo" },
+  { value: "suspenso", label: "Suspenso" },
+];
+
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("pt-PT", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -41,18 +48,24 @@ function formatDate(dateStr: string) {
 export function UsersList({ users, currentAdminId }: { users: AdminUser[]; currentAdminId: string }) {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [estadoFilter, setEstadoFilter] = useState("all");
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
       const matchesRole = roleFilter === "all" || u.role === roleFilter;
+      const matchesEstado =
+        estadoFilter === "all" ||
+        (estadoFilter === "suspenso" && u.is_suspended) ||
+        (estadoFilter === "ativo" && !u.is_suspended);
       const term = search.trim().toLowerCase();
       const matchesSearch =
         !term ||
         u.full_name?.toLowerCase().includes(term) ||
-        u.email.toLowerCase().includes(term);
-      return matchesRole && matchesSearch;
+        u.email.toLowerCase().includes(term) ||
+        u.phone?.toLowerCase().includes(term);
+      return matchesRole && matchesEstado && matchesSearch;
     });
-  }, [users, search, roleFilter]);
+  }, [users, search, roleFilter, estadoFilter]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -61,7 +74,7 @@ export function UsersList({ users, currentAdminId }: { users: AdminUser[]; curre
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
           <input
             type="text"
-            placeholder="Pesquisar por nome ou email..."
+            placeholder="Pesquisar por nome, email ou telefone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-md border border-border py-2.5 pl-9 pr-3 text-sm outline-none focus:border-teal-500"
@@ -80,6 +93,24 @@ export function UsersList({ users, currentAdminId }: { users: AdminUser[]; curre
               roleFilter === f.value
                 ? "border-navy-700 bg-navy-700 text-white"
                 : "border-border text-ink-soft hover:border-navy-700"
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {estadoFilters.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => setEstadoFilter(f.value)}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              estadoFilter === f.value
+                ? "border-teal-600 bg-teal-50 text-teal-700"
+                : "border-border text-ink-soft hover:border-teal-600"
             )}
           >
             {f.label}

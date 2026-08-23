@@ -1,54 +1,48 @@
-import Link from "next/link";
-import { Users, Briefcase, FileCheck2, TrendingUp, ArrowRight } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+import {
+  Users,
+  UserCheck,
+  Radio,
+  Briefcase,
+  Clock3,
+  FileCheck2,
+  ListChecks,
+  CheckCircle2,
+  Flag,
+  Wallet,
+  TrendingUp,
+  BarChart3,
+} from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { StatCard } from "@/components/admin/StatCard";
+import { UsersChart } from "@/components/admin/UsersChart";
+import { JobsChart } from "@/components/admin/JobsChart";
+import { CategoriesChart } from "@/components/admin/CategoriesChart";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
+import { getDashboardStats } from "@/lib/admin/queries";
 
-export const metadata = { title: "Administração" };
+export const metadata = { title: "Dashboard — Administração" };
 export const dynamic = "force-dynamic";
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("pt-PT", { day: "2-digit", month: "short" });
 }
 
-export default async function AdminPage() {
-  const { supabase } = await requireAdmin();
+function growth(current: number, previous: number): number | null {
+  if (previous === 0) return current > 0 ? 100 : null;
+  return ((current - previous) / previous) * 100;
+}
 
-  const now = new Date();
-  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+export default async function AdminDashboardPage() {
+  const { supabase, profile } = await requireAdmin();
 
-  const [
-    { count: totalUsers },
-    { count: activeJobs },
-    { count: totalApplications },
-    { count: usersThisMonth },
-    { count: usersLastMonth },
-    { data: recentJobs },
-  ] = await Promise.all([
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
-    supabase.from("jobs").select("*", { count: "exact", head: true }).eq("status", "aberto"),
-    supabase.from("job_applications").select("*", { count: "exact", head: true }),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", startOfThisMonth),
-    supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true })
-      .gte("created_at", startOfLastMonth)
-      .lt("created_at", startOfThisMonth),
-    supabase
-      .from("jobs")
-      .select("id, title, city, status, client_id, created_at")
-      .order("created_at", { ascending: false })
-      .limit(10),
-  ]);
+  const stats = await getDashboardStats(supabase);
 
-  let growthLabel = "—";
-  if (usersLastMonth && usersLastMonth > 0) {
-    const growth = (((usersThisMonth ?? 0) - usersLastMonth) / usersLastMonth) * 100;
-    growthLabel = `${growth >= 0 ? "+" : ""}${growth.toFixed(0)}%`;
-  } else if ((usersThisMonth ?? 0) > 0) {
-    growthLabel = `+${usersThisMonth} este mês`;
-  }
+  const { data: recentJobs } = await supabase
+    .from("jobs")
+    .select("id, title, city, status, client_id, created_at")
+    .order("created_at", { ascending: false })
+    .limit(8);
 
   const jobs = recentJobs ?? [];
   const clientIds = [...new Set(jobs.map((j) => j.client_id))];
@@ -58,47 +52,74 @@ export default async function AdminPage() {
     clientsById = Object.fromEntries((clients ?? []).map((c) => [c.id, c]));
   }
 
-  const stats = [
-    { icon: Users, label: "Utilizadores registados", value: (totalUsers ?? 0).toLocaleString("pt-PT") },
-    { icon: Briefcase, label: "Trabalhos ativos", value: (activeJobs ?? 0).toLocaleString("pt-PT") },
-    { icon: FileCheck2, label: "Candidaturas totais", value: (totalApplications ?? 0).toLocaleString("pt-PT") },
-    { icon: TrendingUp, label: "Novos utilizadores (mês)", value: growthLabel },
-  ];
-
   return (
-    <div className="container-kazigo py-10 sm:py-14">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold sm:text-3xl">Administração</h1>
-        <p className="mt-1 text-sm text-ink-faint">Visão geral da plataforma KaziGo.</p>
+    <AdminLayout adminName={profile.full_name || profile.email}>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold sm:text-3xl">Dashboard</h1>
+        <p className="mt-1 text-sm text-ink-faint">Visão geral em tempo real da plataforma KaziGo.</p>
       </div>
 
-      <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="flex flex-col gap-2 p-5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-navy-50 text-navy-700">
-              <stat.icon className="h-[18px] w-[18px]" aria-hidden="true" />
-            </span>
-            <p className="text-xl font-bold text-ink">{stat.value}</p>
-            <p className="text-xs text-ink-faint">{stat.label}</p>
-          </Card>
-        ))}
+      {/* Cards de estatísticas */}
+      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard icon={Users} label="Utilizadores registados" value={stats.totalUsers} />
+        <StatCard
+          icon={UserCheck}
+          label="Utilizadores ativos hoje"
+          unavailable
+          unavailableReason="Precisa de registo de sessões (last_sign_in_at)"
+        />
+        <StatCard
+          icon={Radio}
+          label="Utilizadores online"
+          unavailable
+          unavailableReason="Precisa de presença em tempo real (Supabase Realtime)"
+        />
+        <StatCard icon={Briefcase} label="Trabalhos publicados" value={stats.totalJobs} />
+        <StatCard
+          icon={Clock3}
+          label="Trabalhos pendentes de aprovação"
+          unavailable
+          unavailableReason='Não existe fluxo de aprovação — status "aberto" já é público'
+        />
+        <StatCard icon={FileCheck2} label="Candidaturas totais" value={stats.totalApplications} />
+        <StatCard icon={ListChecks} label="Candidaturas pendentes" value={stats.pendingApplications} />
+        <StatCard icon={CheckCircle2} label="Trabalhos concluídos" value={stats.completedJobs} />
+        <StatCard
+          icon={Flag}
+          label="Denúncias pendentes"
+          unavailable
+          unavailableReason="Precisa da tabela reports (Etapa 3)"
+        />
+        <StatCard
+          icon={Wallet}
+          label="Valor movimentado"
+          unavailable
+          unavailableReason="Precisa do sistema de pagamentos (Fase 4)"
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Novos utilizadores (mês)"
+          value={stats.usersThisMonth}
+          growthPercent={growth(stats.usersThisMonth, stats.usersLastMonth)}
+        />
+        <StatCard
+          icon={BarChart3}
+          label="Crescimento de trabalhos"
+          value={stats.jobsThisMonth}
+          growthPercent={growth(stats.jobsThisMonth, stats.jobsLastMonth)}
+        />
       </div>
 
-      <Link href="/admin/utilizadores" className="mb-10 block">
-        <Card className="flex items-center justify-between p-5 hover:border-teal-500/60">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-sm bg-teal-50 text-teal-700">
-              <Users className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-ink">Gerir utilizadores</p>
-              <p className="text-xs text-ink-faint">Ver, pesquisar e suspender contas</p>
-            </div>
-          </div>
-          <ArrowRight className="h-4 w-4 text-ink-faint" aria-hidden="true" />
-        </Card>
-      </Link>
+      {/* Gráficos */}
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        <div className="lg:col-span-2">
+          <UsersChart />
+        </div>
+        <JobsChart />
+        <CategoriesChart />
+      </div>
 
+      {/* Trabalhos recentes */}
       <h2 className="mb-4 text-lg font-semibold">Trabalhos recentes</h2>
       {jobs.length === 0 ? (
         <p className="text-sm text-ink-faint">Ainda não há trabalhos publicados na plataforma.</p>
@@ -130,10 +151,6 @@ export default async function AdminPage() {
           </table>
         </div>
       )}
-
-      <p className="mt-8 text-xs text-ink-faint">
-        Denúncias ainda não estão disponíveis nesta área — vêm numa próxima atualização.
-      </p>
-    </div>
+    </AdminLayout>
   );
 }
