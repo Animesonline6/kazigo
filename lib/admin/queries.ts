@@ -157,3 +157,27 @@ export async function getJobsByCategory(supabase: SupabaseClient) {
 
   return { points, error: null };
 }
+
+export interface CategoryWithCount {
+  id: string;
+  name: string;
+  slug: string;
+  active: boolean;
+  created_at: string;
+  jobsCount: number;
+}
+
+/** Lista de categorias reais com contagem de trabalhos associados. */
+export async function getCategoriesWithCounts(supabase: SupabaseClient): Promise<CategoryWithCount[]> {
+  const [{ data: categories }, { data: jobs }] = await Promise.all([
+    supabase.from("categories").select("id, name, slug, active, created_at").order("name"),
+    supabase.from("jobs").select("category"),
+  ]);
+
+  const counts: Record<string, number> = {};
+  for (const j of jobs ?? []) {
+    counts[j.category] = (counts[j.category] ?? 0) + 1;
+  }
+
+  return (categories ?? []).map((c) => ({ ...c, jobsCount: counts[c.name] ?? 0 }));
+}

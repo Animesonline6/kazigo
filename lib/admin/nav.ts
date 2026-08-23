@@ -26,7 +26,7 @@ export const adminNavItems: AdminNavItem[] = [
   { href: "/admin/utilizadores", label: "Utilizadores", icon: Users, ready: true },
   { href: "/admin/trabalhos", label: "Trabalhos", icon: Briefcase, ready: true },
   { href: "/admin/candidaturas", label: "Candidaturas", icon: FileCheck2, ready: true },
-  { href: "/admin/categorias", label: "Categorias", icon: Tag, ready: false },
+  { href: "/admin/categorias", label: "Categorias", icon: Tag, ready: true },
   { href: "/admin/denuncias", label: "Denúncias", icon: Flag, ready: false },
   { href: "/admin/avaliacoes", label: "Avaliações", icon: Star, ready: false },
   { href: "/admin/pagamentos", label: "Pagamentos", icon: CreditCard, ready: false },

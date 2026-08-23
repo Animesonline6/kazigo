@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -8,20 +8,12 @@ import { TextInput, TextArea, Select } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { createClient } from "@/lib/supabase/client";
 
-const categoryOptions = [
-  { value: "Construção & Reparações", label: "Construção & Reparações" },
-  { value: "Design & Criação", label: "Design & Criação" },
-  { value: "Tecnologia & Programação", label: "Tecnologia & Programação" },
-  { value: "Transporte & Entregas", label: "Transporte & Entregas" },
-  { value: "Educação & Explicações", label: "Educação & Explicações" },
-  { value: "Beleza & Bem-estar", label: "Beleza & Bem-estar" },
-  { value: "Eventos & Catering", label: "Eventos & Catering" },
-  { value: "Limpeza & Doméstico", label: "Limpeza & Doméstico" },
-];
-
 export default function PublicarTrabalhoPage() {
   const router = useRouter();
   const supabase = createClient();
+
+  const [categoryOptions, setCategoryOptions] = useState<{ value: string; label: string }[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -32,6 +24,23 @@ export default function PublicarTrabalhoPage() {
   const [budgetMax, setBudgetMax] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("categories")
+      .select("name")
+      .eq("active", true)
+      .order("name")
+      .then(({ data }) => {
+        if (!active) return;
+        setCategoryOptions((data ?? []).map((c) => ({ value: c.name, label: c.name })));
+        setCategoriesLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [supabase]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -112,7 +121,8 @@ export default function PublicarTrabalhoPage() {
             label="Categoria"
             required
             options={categoryOptions}
-            placeholder="Escolhe uma categoria"
+            placeholder={categoriesLoading ? "A carregar categorias..." : "Escolhe uma categoria"}
+            disabled={categoriesLoading}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           />
