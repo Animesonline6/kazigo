@@ -87,8 +87,7 @@ export default async function AdminDashboardPage() {
         <StatCard
           icon={Flag}
           label="Denúncias pendentes"
-          unavailable
-          unavailableReason="Precisa da tabela reports (Etapa 3)"
+          value={stats.pendingReports}
         />
         <StatCard
           icon={Wallet}

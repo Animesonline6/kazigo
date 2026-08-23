@@ -1,8 +1,12 @@
 import { notFound } from "next/navigation";
-import { MapPin, Wifi, Users } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Wifi, Users, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { FavoriteButton } from "@/components/marketplace/FavoriteButton";
+import { DeleteJobButton } from "@/components/marketplace/DeleteJobButton";
+import { ReportButton } from "@/components/marketplace/ReportButton";
 import { createClient } from "@/lib/supabase/server";
 import { ApplyButton } from "./ApplyButton";
 
@@ -56,6 +60,8 @@ export default async function JobDetailPage({ params }: { params: { id: string }
     isFavorited = !!favorite;
   }
 
+  const isOwner = user?.id === job.client_id;
+
   return (
     <div className="container-kazigo max-w-3xl py-10 sm:py-14">
       <Card className="p-6 sm:p-8">
@@ -71,6 +77,18 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             <FavoriteButton jobId={job.id} userId={user?.id ?? null} initiallyFavorited={isFavorited} />
           </div>
         </div>
+
+        {isOwner && (
+          <div className="mb-6 flex gap-2 border-b border-border pb-6">
+            <Link href={`/trabalhos/${job.id}/editar`}>
+              <Button variant="outline" size="sm">
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+                Editar
+              </Button>
+            </Link>
+            <DeleteJobButton jobId={job.id} />
+          </div>
+        )}
 
         <div className="mb-6 flex flex-wrap items-center gap-3 text-sm text-ink-faint">
           {job.remote ? (
@@ -109,6 +127,18 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           isOwnJob={user?.id === job.client_id}
           isLoggedIn={!!user}
         />
+
+        {!isOwner && (
+          <div className="mt-4 flex justify-center">
+            <ReportButton
+              targetType="job"
+              jobId={job.id}
+              reportedUserId={job.client_id}
+              isLoggedIn={!!user}
+              label="Reportar este trabalho"
+            />
+          </div>
+        )}
       </Card>
     </div>
   );
