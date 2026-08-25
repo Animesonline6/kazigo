@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Heart, MapPin, Wifi } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -77,9 +76,9 @@ export function RecommendedJobCard({
   return (
     <Card className="flex flex-col gap-3 p-4 hover:border-teal-500/60">
       <div className="flex items-start justify-between gap-2">
-        <Link href={`/trabalhos/${job.id}`} className="text-sm font-semibold text-ink hover:text-navy-700">
+        <a href={`/trabalhos/${job.id}`} className="text-sm font-semibold text-ink hover:text-navy-700">
           {job.title}
-        </Link>
+        </a>
         <button
           type="button"
           onClick={toggleFavorite}

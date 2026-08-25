@@ -260,9 +260,9 @@ export default async function DashboardPage() {
               <Card key={job.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link href={`/trabalhos/${job.id}`} className="truncate text-sm font-semibold text-ink hover:text-navy-700">
+                    <a href={`/trabalhos/${job.id}`} className="truncate text-sm font-semibold text-ink hover:text-navy-700">
                       {job.title}
-                    </Link>
+                    </a>
                     <JobStatusBadge status={job.status as JobStatus} />
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-ink-faint">
@@ -274,11 +274,11 @@ export default async function DashboardPage() {
                     <span>{formatRelative(job.created_at)}</span>
                   </div>
                 </div>
-                <Link href={`/trabalhos/${job.id}`} className="shrink-0">
+                <a href={`/trabalhos/${job.id}`} className="shrink-0">
                   <Button variant="outline" size="sm" fullWidth className="sm:w-auto">
                     Ver trabalho
                   </Button>
-                </Link>
+                </a>
               </Card>
             ))}
           </div>

@@ -75,9 +75,9 @@ export default async function TrabalhosPage() {
           {jobs.map((job) => (
             <Card key={job.id} className="flex flex-col gap-3 p-5 hover:border-teal-500/60 hover:shadow-elevated">
               <div className="flex items-start justify-between gap-3">
-                <Link href={`/trabalhos/${job.id}`} className="text-base font-semibold text-ink hover:text-navy-700">
+                <a href={`/trabalhos/${job.id}`} className="text-base font-semibold text-ink hover:text-navy-700">
                   {job.title}
-                </Link>
+                </a>
                 <FavoriteButton
                   jobId={job.id}
                   userId={user?.id ?? null}
