@@ -105,8 +105,6 @@ export function Navbar() {
     router.refresh();
   }
 
-  const canPublish = profile?.role === "client" || profile?.role === "company";
-
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-white/95 backdrop-blur">
       <div className="container-kazigo flex h-16 items-center justify-between">
@@ -240,12 +238,10 @@ export function Navbar() {
                   Administração
                 </a>
               )}
-              {canPublish && (
-                <Link href="/trabalhos/publicar" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 border-b border-border py-3.5 text-sm font-medium text-ink">
-                  <Plus className="h-4 w-4 text-ink-faint" aria-hidden="true" />
-                  Publicar trabalho
-                </Link>
-              )}
+              <Link href="/trabalhos/publicar" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 border-b border-border py-3.5 text-sm font-medium text-ink">
+                <Plus className="h-4 w-4 text-ink-faint" aria-hidden="true" />
+                Publicar trabalho
+              </Link>
               <Link href="/candidaturas" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 border-b border-border py-3.5 text-sm font-medium text-ink">
                 <FileCheck2 className="h-4 w-4 text-ink-faint" aria-hidden="true" />
                 Candidaturas
