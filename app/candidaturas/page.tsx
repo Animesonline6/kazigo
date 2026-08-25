@@ -242,7 +242,12 @@ export default async function CandidaturasPage() {
                 )}
 
                 {app.status === "pendente" && (
-                  <ClientApplicationActions applicationId={app.id} jobId={job.id} />
+                  <ClientApplicationActions
+                    applicationId={app.id}
+                    jobId={job.id}
+                    jobTitle={job.title}
+                    workerId={app.worker_id}
+                  />
                 )}
               </Card>
             );

@@ -5,8 +5,19 @@ import { useRouter } from "next/navigation";
 import { Check, X, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+import { createNotification } from "@/lib/notifications/create";
 
-export function ClientApplicationActions({ applicationId, jobId }: { applicationId: string; jobId: string }) {
+export function ClientApplicationActions({
+  applicationId,
+  jobId,
+  jobTitle,
+  workerId,
+}: {
+  applicationId: string;
+  jobId: string;
+  jobTitle: string;
+  workerId: string;
+}) {
   const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState<"aceitar" | "recusar" | null>(null);
@@ -23,6 +34,14 @@ export function ClientApplicationActions({ applicationId, jobId }: { application
 
       // Marca o trabalho como "em andamento"
       await supabase.from("jobs").update({ status: "em_andamento" }).eq("id", jobId);
+
+      createNotification(supabase, {
+        userId: workerId,
+        type: "candidatura",
+        title: "Candidatura aceite",
+        description: `A tua candidatura para "${jobTitle}" foi aceite.`,
+        relatedJobId: jobId,
+      });
 
       // Email é best-effort — não bloqueia a ação em si
       fetch("/api/notify/candidatura-aceite", {

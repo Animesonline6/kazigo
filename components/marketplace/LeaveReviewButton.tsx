@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { TextArea } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { createClient } from "@/lib/supabase/client";
+import { createNotification } from "@/lib/notifications/create";
 import { cn } from "@/lib/utils";
 
 export function LeaveReviewButton({
@@ -48,6 +49,13 @@ export function LeaveReviewButton({
         comment: comment || null,
       });
       if (insertError) throw insertError;
+      createNotification(supabase, {
+        userId: revieweeId,
+        type: "avaliacao",
+        title: "Nova avaliação",
+        description: `Recebeste uma avaliação de ${rating} estrela${rating === 1 ? "" : "s"}.`,
+        relatedJobId: jobId,
+      });
       setDone(true);
       router.refresh();
     } catch {

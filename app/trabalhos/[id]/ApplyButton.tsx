@@ -6,14 +6,19 @@ import { Button } from "@/components/ui/Button";
 import { TextArea } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { createClient } from "@/lib/supabase/client";
+import { createNotification } from "@/lib/notifications/create";
 
 export function ApplyButton({
   jobId,
+  jobTitle,
+  clientId,
   alreadyApplied,
   isOwnJob,
   isLoggedIn,
 }: {
   jobId: string;
+  jobTitle: string;
+  clientId: string;
   alreadyApplied: boolean;
   isOwnJob: boolean;
   isLoggedIn: boolean;
@@ -75,8 +80,16 @@ export function ApplyButton({
       return;
     }
 
-    // Envio de email é "melhor esforço": não bloqueia nem falha a
-    // candidatura se o email não sair (ex: Resend ainda não configurado).
+    // Notificação + email são "melhor esforço": não bloqueiam nem
+    // falham a candidatura.
+    createNotification(supabase, {
+      userId: clientId,
+      type: "candidatura",
+      title: "Nova candidatura",
+      description: `Recebeste uma candidatura para "${jobTitle}".`,
+      relatedJobId: jobId,
+    });
+
     fetch("/api/notify/nova-candidatura", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

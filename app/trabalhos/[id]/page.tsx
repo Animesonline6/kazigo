@@ -173,6 +173,8 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
         <ApplyButton
           jobId={job.id}
+          jobTitle={job.title}
+          clientId={job.client_id}
           alreadyApplied={alreadyApplied}
           isOwnJob={user?.id === job.client_id}
           isLoggedIn={!!user}
