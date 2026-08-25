@@ -9,6 +9,7 @@ import { DeleteJobButton } from "@/components/marketplace/DeleteJobButton";
 import { ReportButton } from "@/components/marketplace/ReportButton";
 import { LeaveReviewButton } from "@/components/marketplace/LeaveReviewButton";
 import { CompleteJobButton } from "@/components/marketplace/CompleteJobButton";
+import { MessageButton } from "@/components/marketplace/MessageButton";
 import { createClient } from "@/lib/supabase/server";
 import { ApplyButton } from "./ApplyButton";
 
@@ -181,7 +182,8 @@ export default async function JobDetailPage({ params }: { params: { id: string }
         />
 
         {!isOwner && (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <MessageButton otherUserId={job.client_id} jobId={job.id} isLoggedIn={!!user} label="Mensagem ao cliente" />
             <ReportButton
               targetType="job"
               jobId={job.id}

@@ -11,6 +11,7 @@ import {
   WorkerApplicationWithdraw,
 } from "@/components/candidaturas/ApplicationActions";
 import { createClient } from "@/lib/supabase/server";
+import { MessageButton } from "@/components/marketplace/MessageButton";
 import type { ApplicationStatus } from "@/types";
 
 export const metadata = { title: "Candidaturas" };
@@ -81,7 +82,7 @@ export default async function CandidaturasPage() {
     if (jobIds.length > 0) {
       const { data: jobs } = await supabase
         .from("jobs")
-        .select("id, title, city, remote, category, budget_min, budget_max")
+        .select("id, title, city, remote, category, budget_min, budget_max, client_id")
         .in("id", jobIds);
       jobsById = Object.fromEntries((jobs ?? []).map((j) => [j.id, j]));
     }
@@ -137,6 +138,7 @@ export default async function CandidaturasPage() {
                     <Badge tone={statusTone[app.status as ApplicationStatus]}>
                       {statusLabel[app.status as ApplicationStatus]}
                     </Badge>
+                    <MessageButton otherUserId={job.client_id} jobId={job.id} isLoggedIn label="Mensagem" />
                     {app.status === "pendente" && <WorkerApplicationWithdraw applicationId={app.id} />}
                   </div>
                 </Card>
@@ -242,12 +244,15 @@ export default async function CandidaturasPage() {
                 )}
 
                 {app.status === "pendente" && (
-                  <ClientApplicationActions
-                    applicationId={app.id}
-                    jobId={job.id}
-                    jobTitle={job.title}
-                    workerId={app.worker_id}
-                  />
+                  <div className="flex flex-wrap gap-2">
+                    <ClientApplicationActions
+                      applicationId={app.id}
+                      jobId={job.id}
+                      jobTitle={job.title}
+                      workerId={app.worker_id}
+                    />
+                    <MessageButton otherUserId={app.worker_id} jobId={job.id} isLoggedIn label="Mensagem" />
+                  </div>
                 )}
               </Card>
             );
