@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { FavoriteButton } from "@/components/marketplace/FavoriteButton";
 import { DeleteJobButton } from "@/components/marketplace/DeleteJobButton";
 import { ReportButton } from "@/components/marketplace/ReportButton";
+import { LeaveReviewButton } from "@/components/marketplace/LeaveReviewButton";
+import { CompleteJobButton } from "@/components/marketplace/CompleteJobButton";
 import { createClient } from "@/lib/supabase/server";
 import { ApplyButton } from "./ApplyButton";
 
@@ -62,6 +64,53 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   const isOwner = user?.id === job.client_id;
 
+  // Se o trabalho está concluído, descobre quem é "a outra parte"
+  // para permitir deixar avaliação (cliente ↔ trabalhador aceite).
+  let reviewTarget: { id: string; name: string } | null = null;
+  let alreadyReviewed = false;
+
+  if (user && job.status === "concluido") {
+    if (isOwner) {
+      const { data: acceptedApp } = await supabase
+        .from("job_applications")
+        .select("worker_id")
+        .eq("job_id", job.id)
+        .eq("status", "aceite")
+        .maybeSingle();
+
+      if (acceptedApp) {
+        const { data: worker } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", acceptedApp.worker_id)
+          .single();
+        reviewTarget = { id: acceptedApp.worker_id, name: worker?.full_name || "Trabalhador" };
+      }
+    } else {
+      const { data: myAcceptedApp } = await supabase
+        .from("job_applications")
+        .select("id")
+        .eq("job_id", job.id)
+        .eq("worker_id", user.id)
+        .eq("status", "aceite")
+        .maybeSingle();
+
+      if (myAcceptedApp) {
+        reviewTarget = { id: job.client_id, name: client?.full_name || "Cliente" };
+      }
+    }
+
+    if (reviewTarget) {
+      const { data: existingReview } = await supabase
+        .from("reviews")
+        .select("id")
+        .eq("job_id", job.id)
+        .eq("author_id", user.id)
+        .maybeSingle();
+      alreadyReviewed = !!existingReview;
+    }
+  }
+
   return (
     <div className="container-kazigo max-w-3xl py-10 sm:py-14">
       <Card className="p-6 sm:p-8">
@@ -87,6 +136,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
               </Button>
             </Link>
             <DeleteJobButton jobId={job.id} />
+            {job.status === "em_andamento" && <CompleteJobButton jobId={job.id} />}
           </div>
         )}
 
@@ -138,6 +188,20 @@ export default async function JobDetailPage({ params }: { params: { id: string }
               label="Reportar este trabalho"
             />
           </div>
+        )}
+
+        {reviewTarget && !alreadyReviewed && user && (
+          <div className="mt-4 flex justify-center">
+            <LeaveReviewButton
+              jobId={job.id}
+              authorId={user.id}
+              revieweeId={reviewTarget.id}
+              revieweeName={reviewTarget.name}
+            />
+          </div>
+        )}
+        {reviewTarget && alreadyReviewed && (
+          <p className="mt-4 text-center text-xs text-ink-faint">Já avaliaste {reviewTarget.name} neste trabalho.</p>
         )}
       </Card>
     </div>
