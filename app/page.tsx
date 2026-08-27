@@ -82,6 +82,16 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const supabase = createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let firstName: string | null = null;
+  if (user) {
+    const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+    firstName = profile?.full_name?.split(" ")[0] || null;
+  }
+
   const { data: featuredJobs } = await supabase
     .from("jobs")
     .select("id, title, description, category, city, remote, budget_min, budget_max, applications_count, created_at")
@@ -106,34 +116,60 @@ export default async function HomePage() {
         />
         <div className="container-kazigo relative flex flex-col items-center gap-7 py-20 text-center sm:py-28">
           <h1 className="max-w-3xl text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
-            Encontra. Trabalha. <span className="text-teal-400">Ganha.</span>
+            {firstName ? (
+              <>
+                Bem-vindo de volta, <span className="text-teal-400">{firstName}</span>.
+              </>
+            ) : (
+              <>
+                Encontra. Trabalha. <span className="text-teal-400">Ganha.</span>
+              </>
+            )}
           </h1>
           <p className="max-w-xl text-base text-navy-100 sm:text-lg">
-            A plataforma que conecta profissionais, trabalhadores, freelancers, empresas e clientes em
-            Moçambique.
+            {firstName
+              ? "Vê os trabalhos mais recentes ou continua de onde ficaste."
+              : "A plataforma que conecta profissionais, trabalhadores, freelancers, empresas e clientes em Moçambique."}
           </p>
 
-          <div className="flex w-full max-w-xl flex-col gap-3 sm:flex-row">
-            <div className="flex-1">
-              <SearchInput placeholder="Que trabalho procuras? Ex: eletricista, design..." />
+          {firstName ? (
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+              <Link href="/dashboard">
+                <Button size="lg" variant="secondary">
+                  Ir para o meu dashboard
+                </Button>
+              </Link>
+              <Link href="/trabalhos">
+                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 hover:border-white">
+                  Ver trabalhos
+                </Button>
+              </Link>
             </div>
-            <Button size="lg" className="shrink-0">
-              Pesquisar
-            </Button>
-          </div>
+          ) : (
+            <>
+              <div className="flex w-full max-w-xl flex-col gap-3 sm:flex-row">
+                <div className="flex-1">
+                  <SearchInput placeholder="Que trabalho procuras? Ex: eletricista, design..." />
+                </div>
+                <Button size="lg" className="shrink-0">
+                  Pesquisar
+                </Button>
+              </div>
 
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-            <Link href="/trabalhos">
-              <Button size="lg" variant="secondary">
-                Encontrar trabalhos
-              </Button>
-            </Link>
-            <Link href="/registar">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 hover:border-white">
-                Começar a trabalhar
-              </Button>
-            </Link>
-          </div>
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+                <Link href="/trabalhos">
+                  <Button size="lg" variant="secondary">
+                    Encontrar trabalhos
+                  </Button>
+                </Link>
+                <Link href="/registar">
+                  <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 hover:border-white">
+                    Começar a trabalhar
+                  </Button>
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
