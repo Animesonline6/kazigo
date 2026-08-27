@@ -78,8 +78,7 @@ export default async function AdminDashboardPage() {
         <StatCard
           icon={Clock3}
           label="Trabalhos pendentes de aprovação"
-          unavailable
-          unavailableReason='Não existe fluxo de aprovação — status "aberto" já é público'
+          value={stats.pendingApproval}
         />
         <StatCard icon={FileCheck2} label="Candidaturas totais" value={stats.totalApplications} />
         <StatCard icon={ListChecks} label="Candidaturas pendentes" value={stats.pendingApplications} />

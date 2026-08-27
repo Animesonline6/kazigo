@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { TextInput, TextArea, Select } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { createClient } from "@/lib/supabase/client";
+import { createAdminNotification } from "@/lib/notifications/createAdminNotification";
 
 export default function PublicarTrabalhoPage() {
   const router = useRouter();
@@ -78,6 +79,13 @@ export default function PublicarTrabalhoPage() {
       setError("Não foi possível publicar o trabalho. Tenta novamente.");
       return;
     }
+
+    createAdminNotification(supabase, {
+      type: "novo_trabalho",
+      title: "Novo trabalho a aguardar aprovação",
+      description: `"${title}" precisa de ser revisto antes de ficar público.`,
+      relatedId: data.id,
+    });
 
     router.push(`/trabalhos/${data.id}`);
     router.refresh();

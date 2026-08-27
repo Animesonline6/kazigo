@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { CloseJobButton } from "@/components/admin/CloseJobButton";
+import { ApproveJobButtons } from "@/components/admin/ApproveJobButtons";
 import { cn } from "@/lib/utils";
 
 export interface AdminJob {
@@ -15,13 +16,16 @@ export interface AdminJob {
   city: string | null;
   remote: boolean;
   status: string;
+  approval_status: string;
   applications_count: number;
   created_at: string;
+  client_id: string;
   client_name: string;
 }
 
 const statusFilters = [
   { value: "all", label: "Todos" },
+  { value: "pendente_aprovacao", label: "Pendentes de aprovação" },
   { value: "aberto", label: "Ativos" },
   { value: "em_andamento", label: "Em andamento" },
   { value: "concluido", label: "Concluídos" },
@@ -39,7 +43,9 @@ export function JobsAdminList({ jobs }: { jobs: AdminJob[] }) {
 
   const filtered = useMemo(() => {
     return jobs.filter((j) => {
-      const matchesStatus = statusFilter === "all" || j.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "pendente_aprovacao" ? j.approval_status === "pendente" : j.status === statusFilter);
       const term = search.trim().toLowerCase();
       const matchesSearch =
         !term ||
@@ -96,6 +102,8 @@ export function JobsAdminList({ jobs }: { jobs: AdminJob[] }) {
                 <Badge tone={job.status === "aberto" ? "success" : job.status === "cancelado" ? "danger" : "neutral"}>
                   {job.status}
                 </Badge>
+                {job.approval_status === "pendente" && <Badge tone="warning">Pendente de aprovação</Badge>}
+                {job.approval_status === "rejeitado" && <Badge tone="danger">Rejeitado</Badge>}
               </div>
               <p className="mt-1 text-xs text-ink-faint">
                 {job.client_name} · {job.remote ? "Remoto" : job.city ?? "—"} · {job.category} · {job.applications_count}{" "}
@@ -104,12 +112,18 @@ export function JobsAdminList({ jobs }: { jobs: AdminJob[] }) {
             </div>
 
             <div className="flex shrink-0 gap-2">
-              <Link href={`/trabalhos/${job.id}`}>
-                <button className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-soft hover:border-navy-700">
-                  Ver
-                </button>
-              </Link>
-              <CloseJobButton jobId={job.id} disabled={job.status === "cancelado"} />
+              {job.approval_status === "pendente" ? (
+                <ApproveJobButtons jobId={job.id} clientId={job.client_id} jobTitle={job.title} />
+              ) : (
+                <>
+                  <Link href={`/trabalhos/${job.id}`}>
+                    <button className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-soft hover:border-navy-700">
+                      Ver
+                    </button>
+                  </Link>
+                  <CloseJobButton jobId={job.id} disabled={job.status === "cancelado"} />
+                </>
+              )}
             </div>
           </Card>
         ))}

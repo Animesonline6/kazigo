@@ -10,7 +10,7 @@ export default async function AdminTrabalhosPage() {
 
   const { data: jobs } = await supabase
     .from("jobs")
-    .select("id, title, category, city, remote, status, applications_count, created_at, client_id")
+    .select("id, title, category, city, remote, status, approval_status, applications_count, created_at, client_id")
     .order("created_at", { ascending: false });
 
   const jobsData = jobs ?? [];
@@ -29,8 +29,10 @@ export default async function AdminTrabalhosPage() {
     city: j.city,
     remote: j.remote,
     status: j.status,
+    approval_status: j.approval_status,
     applications_count: j.applications_count,
     created_at: j.created_at,
+    client_id: j.client_id,
     client_name: clientsById[j.client_id] ?? "—",
   }));
 

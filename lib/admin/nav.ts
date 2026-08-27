@@ -31,6 +31,6 @@ export const adminNavItems: AdminNavItem[] = [
   { href: "/admin/avaliacoes", label: "Avaliações", icon: Star, ready: true },
   { href: "/admin/pagamentos", label: "Pagamentos", icon: CreditCard, ready: false },
   { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3, ready: false },
-  { href: "/admin/notificacoes-admin", label: "Notificações", icon: Bell, ready: false },
+  { href: "/admin/notificacoes-admin", label: "Notificações", icon: Bell, ready: true },
   { href: "/admin/configuracoes", label: "Configurações", icon: Settings, ready: true },
 ];

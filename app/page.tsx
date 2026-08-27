@@ -96,6 +96,7 @@ export default async function HomePage() {
     .from("jobs")
     .select("id, title, description, category, city, remote, budget_min, budget_max, applications_count, created_at")
     .eq("status", "aberto")
+    .eq("approval_status", "aprovado")
     .order("created_at", { ascending: false })
     .limit(6);
 

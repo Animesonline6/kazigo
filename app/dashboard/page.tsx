@@ -133,6 +133,7 @@ export default async function DashboardPage() {
     .from("jobs")
     .select("id, title, category, city, remote, budget_min, budget_max, created_at")
     .eq("status", "aberto")
+    .eq("approval_status", "aprovado")
     .neq("client_id", user.id) // não recomenda os teus próprios trabalhos
     .order("created_at", { ascending: false })
     .limit(4);

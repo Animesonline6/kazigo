@@ -32,6 +32,7 @@ export default async function TrabalhosPage() {
     .from("jobs")
     .select("id, title, description, category, city, remote, budget_min, budget_max, applications_count, created_at, status")
     .eq("status", "aberto")
+    .eq("approval_status", "aprovado")
     .order("created_at", { ascending: false });
 
   const {

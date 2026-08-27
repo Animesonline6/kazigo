@@ -1,7 +1,6 @@
-import { Users, Briefcase, FileCheck2, CreditCard } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+import { CreditCard } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { ExportCsvButton } from "@/components/admin/ExportCsvButton";
+import { ReportsPanel } from "@/components/admin/ReportsPanel";
 import { ComingSoonSection } from "@/components/admin/ComingSoonSection";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 
@@ -21,50 +20,22 @@ export default async function AdminRelatoriosPage() {
     <AdminLayout adminName={profile.full_name || profile.email}>
       <div className="mb-8">
         <h1 className="text-2xl font-bold sm:text-3xl">Relatórios</h1>
-        <p className="mt-1 text-sm text-ink-faint">Exporta dados reais da plataforma em CSV.</p>
+        <p className="mt-1 text-sm text-ink-faint">
+          Filtra por período e exporta dados reais da plataforma em CSV ou PDF.
+        </p>
       </div>
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <Card className="flex flex-col gap-3 p-5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-navy-50 text-navy-700">
-            <Users className="h-[18px] w-[18px]" aria-hidden="true" />
-          </span>
-          <p className="text-sm font-semibold text-ink">Utilizadores</p>
-          <p className="text-xs text-ink-faint">Todas as contas registadas</p>
-          <ExportCsvButton filename="kazigo-utilizadores.csv" rows={users ?? []} />
-        </Card>
+      <ReportsPanel users={users ?? []} jobs={jobs ?? []} applications={applications ?? []} />
 
-        <Card className="flex flex-col gap-3 p-5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-navy-50 text-navy-700">
-            <Briefcase className="h-[18px] w-[18px]" aria-hidden="true" />
-          </span>
-          <p className="text-sm font-semibold text-ink">Trabalhos</p>
-          <p className="text-xs text-ink-faint">Todos os trabalhos publicados</p>
-          <ExportCsvButton filename="kazigo-trabalhos.csv" rows={jobs ?? []} />
-        </Card>
-
-        <Card className="flex flex-col gap-3 p-5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-navy-50 text-navy-700">
-            <FileCheck2 className="h-[18px] w-[18px]" aria-hidden="true" />
-          </span>
-          <p className="text-sm font-semibold text-ink">Candidaturas</p>
-          <p className="text-xs text-ink-faint">Todas as candidaturas enviadas</p>
-          <ExportCsvButton filename="kazigo-candidaturas.csv" rows={applications ?? []} />
-        </Card>
+      <div className="mt-8">
+        <ComingSoonSection
+          icon={CreditCard}
+          title="Relatórios de pagamentos"
+          description="Só fica disponível quando a Fase 4 (pagamentos) estiver ligada a um gateway real."
+          requiredTable="transactions"
+          requiredFields={["Ver secção Pagamentos no menu"]}
+        />
       </div>
-
-      <p className="mb-4 text-xs text-ink-faint">
-        Filtro por período e exportação PDF ainda não estão disponíveis — dizem-me se precisares e adiciono a
-        seguir. Por agora exporta tudo e filtra no Excel/Google Sheets.
-      </p>
-
-      <ComingSoonSection
-        icon={CreditCard}
-        title="Relatórios de pagamentos e denúncias"
-        description="Estes só ficam disponíveis quando as respetivas tabelas existirem."
-        requiredTable="transactions / reports"
-        requiredFields={["Ver secções Pagamentos e Denúncias no menu"]}
-      />
     </AdminLayout>
   );
 }

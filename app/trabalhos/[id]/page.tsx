@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MapPin, Wifi, Users, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { FavoriteButton } from "@/components/marketplace/FavoriteButton";
 import { DeleteJobButton } from "@/components/marketplace/DeleteJobButton";
@@ -27,21 +28,31 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   const { data: job } = await supabase
     .from("jobs")
-    .select("id, title, description, category, city, remote, budget_min, budget_max, applications_count, status, client_id")
+    .select("id, title, description, category, city, remote, budget_min, budget_max, applications_count, status, approval_status, client_id")
     .eq("id", params.id)
     .single();
 
   if (!job) notFound();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Trabalhos pendentes/rejeitados só são visíveis ao próprio dono
+  // (e a admins) — para todos os outros, comporta-se como se não existisse.
+  let viewerRole: string | null = null;
+  if (user) {
+    const { data: viewerProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    viewerRole = viewerProfile?.role ?? null;
+  }
+  const canSeeUnapproved = user?.id === job.client_id || viewerRole === "admin";
+  if (job.approval_status !== "aprovado" && !canSeeUnapproved) notFound();
 
   const { data: client } = await supabase
     .from("profiles")
     .select("full_name, city")
     .eq("id", job.client_id)
     .single();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   let alreadyApplied = false;
   let isFavorited = false;
@@ -127,6 +138,19 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             <FavoriteButton jobId={job.id} userId={user?.id ?? null} initiallyFavorited={isFavorited} />
           </div>
         </div>
+
+        {isOwner && job.approval_status === "pendente" && (
+          <Alert tone="warning" title="A aguardar aprovação" className="mb-6">
+            Este trabalho ainda não é visível ao público — a equipa da KaziGo revê novos trabalhos antes de os
+            publicar. Só tu (e o admin) conseguem ver esta página por agora.
+          </Alert>
+        )}
+
+        {isOwner && job.approval_status === "rejeitado" && (
+          <Alert tone="danger" title="Trabalho rejeitado" className="mb-6">
+            Este trabalho não foi aprovado para publicação. Contacta o suporte se achares que isto é um engano.
+          </Alert>
+        )}
 
         {isOwner && (
           <div className="mb-6 flex gap-2 border-b border-border pb-6">

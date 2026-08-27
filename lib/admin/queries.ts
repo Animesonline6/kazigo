@@ -20,6 +20,7 @@ export async function getDashboardStats(supabase: SupabaseClient) {
     totalApplications,
     pendingApplications,
     pendingReports,
+    pendingApproval,
     usersThisMonth,
     usersLastMonth,
     jobsThisMonth,
@@ -33,6 +34,7 @@ export async function getDashboardStats(supabase: SupabaseClient) {
     supabase.from("job_applications").select("*", { count: "exact", head: true }),
     supabase.from("job_applications").select("*", { count: "exact", head: true }).eq("status", "pendente"),
     supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "pendente"),
+    supabase.from("jobs").select("*", { count: "exact", head: true }).eq("approval_status", "pendente"),
     supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", startOfThisMonth),
     supabase
       .from("profiles")
@@ -56,6 +58,7 @@ export async function getDashboardStats(supabase: SupabaseClient) {
     totalApplications: totalApplications.count ?? 0,
     pendingApplications: pendingApplications.count ?? 0,
     pendingReports: pendingReports.count ?? 0,
+    pendingApproval: pendingApproval.count ?? 0,
     usersThisMonth: usersThisMonth.count ?? 0,
     usersLastMonth: usersLastMonth.count ?? 0,
     jobsThisMonth: jobsThisMonth.count ?? 0,

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Select, TextArea } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { createClient } from "@/lib/supabase/client";
+import { createAdminNotification } from "@/lib/notifications/createAdminNotification";
 
 const reasonOptions = [
   { value: "spam", label: "Spam ou conteúdo enganoso" },
@@ -75,6 +76,14 @@ export function ReportButton({
       });
 
       if (insertError) throw insertError;
+
+      createAdminNotification(supabase, {
+        type: "nova_denuncia",
+        title: "Nova denúncia recebida",
+        description: reasonOptions.find((r) => r.value === reason)?.label ?? reason,
+        relatedId: jobId,
+      });
+
       setDone(true);
     } catch {
       setError("Não foi possível enviar a denúncia. Tenta novamente.");
