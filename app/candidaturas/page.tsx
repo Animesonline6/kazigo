@@ -219,9 +219,13 @@ export default async function CandidaturasPage() {
               <Card key={app.id} className="flex flex-col gap-4 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <Avatar name={worker.full_name || "Trabalhador"} src={worker.avatar_url ?? undefined} size="sm" />
+                    <Link href={`/trabalhadores/${app.worker_id}`}>
+                      <Avatar name={worker.full_name || "Trabalhador"} src={worker.avatar_url ?? undefined} size="sm" />
+                    </Link>
                     <div>
-                      <p className="text-sm font-semibold text-ink">{worker.full_name || "Trabalhador"}</p>
+                      <Link href={`/trabalhadores/${app.worker_id}`} className="text-sm font-semibold text-ink hover:text-navy-700">
+                        {worker.full_name || "Trabalhador"}
+                      </Link>
                       <Link href={`/trabalhos/${job.id}`} className="text-xs text-ink-faint hover:text-navy-700">
                         candidatou-se a &ldquo;{job.title}&rdquo;
                       </Link>

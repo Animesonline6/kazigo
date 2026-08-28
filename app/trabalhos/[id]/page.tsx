@@ -130,7 +130,10 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           <div>
             <h1 className="text-xl font-bold sm:text-2xl">{job.title}</h1>
             <p className="mt-1 text-sm text-ink-faint">
-              Publicado por {client?.full_name ?? "Cliente"}
+              Publicado por{" "}
+              <Link href={`/empresas/${job.client_id}`} className="font-medium text-navy-700 hover:underline">
+                {client?.full_name ?? "Cliente"}
+              </Link>
             </p>
           </div>
           <div className="flex items-center gap-3">

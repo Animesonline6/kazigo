@@ -5,12 +5,26 @@ import { Heart } from "lucide-react";
 import { Tabs } from "@/components/ui/Tabs";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FavoriteJobCard, type FavoriteJob } from "@/components/favoritos/FavoriteJobCard";
+import { FavoriteWorkerCard, type FavoriteWorker } from "@/components/favoritos/FavoriteWorkerCard";
 
-export function FavoritosList({ userId, initialJobs }: { userId: string; initialJobs: FavoriteJob[] }) {
+export function FavoritosList({
+  userId,
+  initialJobs,
+  initialWorkers,
+}: {
+  userId: string;
+  initialJobs: FavoriteJob[];
+  initialWorkers: FavoriteWorker[];
+}) {
   const [jobs, setJobs] = useState(initialJobs);
+  const [workers, setWorkers] = useState(initialWorkers);
 
-  function handleRemoved(jobId: string) {
+  function handleJobRemoved(jobId: string) {
     setJobs((prev) => prev.filter((j) => j.id !== jobId));
+  }
+
+  function handleWorkerRemoved(workerId: string) {
+    setWorkers((prev) => prev.filter((w) => w.id !== workerId));
   }
 
   return (
@@ -23,7 +37,7 @@ export function FavoritosList({ userId, initialJobs }: { userId: string; initial
             jobs.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {jobs.map((job) => (
-                  <FavoriteJobCard key={job.id} job={job} userId={userId} onRemoved={handleRemoved} />
+                  <FavoriteJobCard key={job.id} job={job} userId={userId} onRemoved={handleJobRemoved} />
                 ))}
               </div>
             ) : (
@@ -37,13 +51,20 @@ export function FavoritosList({ userId, initialJobs }: { userId: string; initial
         {
           value: "trabalhadores",
           label: "Trabalhadores",
-          content: (
-            <EmptyState
-              icon={Heart}
-              title="Ainda não disponível"
-              description="Favoritar trabalhadores vai chegar numa próxima atualização."
-            />
-          ),
+          content:
+            workers.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {workers.map((worker) => (
+                  <FavoriteWorkerCard key={worker.id} worker={worker} userId={userId} onRemoved={handleWorkerRemoved} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Heart}
+                title="Sem trabalhadores favoritos"
+                description="Guarda trabalhadores que te interessem, a partir do perfil deles."
+              />
+            ),
         },
       ]}
     />
