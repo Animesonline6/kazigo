@@ -19,24 +19,15 @@ const columns = [
       { href: "/ajuda", label: "Ajuda" },
     ],
   },
-  {
-    title: "Legal",
-    links: [
-      { href: "/termos", label: "Termos" },
-      { href: "/privacidade", label: "Privacidade" },
-      { href: "/pagamentos", label: "Pagamentos" },
-      { href: "/denuncias", label: "Denúncias" },
-    ],
-  },
 ];
 
 export function Footer() {
   return (
     <footer className="border-t border-border bg-navy-800 text-white">
-      <div className="container-kazigo grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
+      <div className="container-kazigo grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
         <div className="flex flex-col gap-3">
           <Link href="/" className="flex items-center">
-            <Image src="/logo-white.png" alt="KaziGo" width={145} height={40} className="h-9 w-auto" />
+            <Image src="/logo-white.png" alt="KaziGo" width={291} height={80} className="h-9 w-auto" />
           </Link>
           <p className="text-sm font-medium text-navy-100">Encontra. Trabalha. Ganha.</p>
           <p className="flex items-center gap-1.5 text-sm text-navy-200">
