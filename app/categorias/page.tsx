@@ -1,18 +1,15 @@
 import Link from "next/link";
-import {
-  Hammer, PenTool, Code2, Truck, GraduationCap, Sparkles,
-  PartyPopper, SprayCan, Calculator, Sprout, type LucideIcon,
-} from "lucide-react";
-import { categories } from "@/data/mock";
-
-const categoryIcons: Record<string, LucideIcon> = {
-  Hammer, PenTool, Code2, Truck, GraduationCap, Sparkles,
-  PartyPopper, SprayCan, Calculator, Sprout,
-};
+import { Tag } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { getActiveCategoriesWithCounts } from "@/lib/categories";
 
 export const metadata = { title: "Categorias" };
+export const dynamic = "force-dynamic";
 
-export default function CategoriasPage() {
+export default async function CategoriasPage() {
+  const supabase = createClient();
+  const categories = await getActiveCategoriesWithCounts(supabase);
+
   return (
     <div className="container-kazigo py-10 sm:py-14">
       <div className="mb-8 flex flex-col gap-2">
@@ -20,27 +17,29 @@ export default function CategoriasPage() {
         <p className="text-sm text-ink-faint">Explora todas as áreas de trabalho disponíveis na KaziGo.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {categories.map((category) => {
-          const Icon = categoryIcons[category.icon] ?? Hammer;
-          return (
+      {categories.length === 0 ? (
+        <p className="text-sm text-ink-faint">Ainda não há categorias disponíveis.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {categories.map((category) => (
             <Link
               key={category.id}
-              href={`/trabalhos?categoria=${category.slug}`}
+              href={`/trabalhos?categoria=${encodeURIComponent(category.name)}`}
               className="group flex items-start gap-4 rounded-md border border-border bg-white p-5 transition-colors hover:border-teal-500/60 hover:shadow-card"
             >
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm bg-navy-50 text-navy-700 group-hover:bg-teal-50 group-hover:text-teal-600">
-                <Icon className="h-6 w-6" aria-hidden="true" />
+                <Tag className="h-6 w-6" aria-hidden="true" />
               </span>
               <div>
                 <p className="font-semibold text-ink">{category.name}</p>
-                <p className="mt-0.5 text-sm text-ink-faint">{category.description}</p>
-                <p className="mt-2 text-xs font-semibold text-teal-600">{category.jobsCount} trabalhos</p>
+                <p className="mt-2 text-xs font-semibold text-teal-600">
+                  {category.jobsCount} trabalho{category.jobsCount === 1 ? "" : "s"}
+                </p>
               </div>
             </Link>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

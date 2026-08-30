@@ -5,39 +5,19 @@ import {
   UserPlus,
   ClipboardCheck,
   Handshake,
-  Hammer,
-  PenTool,
-  Code2,
-  Truck,
-  GraduationCap,
-  Sparkles,
-  PartyPopper,
-  SprayCan,
-  Calculator,
-  Sprout,
-  type LucideIcon,
+  Tag,
+  Users,
+  MapPin,
+  Wifi,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { SearchInput } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { WorkerCard } from "@/components/marketplace/WorkerCard";
-import { categories, workers } from "@/data/mock";
+import { Avatar } from "@/components/ui/Avatar";
 import { createClient } from "@/lib/supabase/server";
-import { Users, MapPin, Wifi } from "lucide-react";
-
-const categoryIcons: Record<string, LucideIcon> = {
-  Hammer,
-  PenTool,
-  Code2,
-  Truck,
-  GraduationCap,
-  Sparkles,
-  PartyPopper,
-  SprayCan,
-  Calculator,
-  Sprout,
-};
+import { getActiveCategoriesWithCounts } from "@/lib/categories";
 
 const steps = [
   {
@@ -100,8 +80,46 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(6);
 
-  const featuredWorkers = workers.slice(0, 3);
-  const popularCategories = categories.slice(0, 8);
+  const allCategories = await getActiveCategoriesWithCounts(supabase);
+  const popularCategories = [...allCategories].sort((a, b) => b.jobsCount - a.jobsCount).slice(0, 8);
+
+  // "Trabalhadores em destaque": só quem tem avaliações reais — nunca
+  // gente com 0 avaliações a fingir destaque.
+  const { data: topWorkerProfiles } = await supabase
+    .from("worker_profiles")
+    .select("id, headline, skills, rating, reviews_count")
+    .gt("reviews_count", 0)
+    .order("rating", { ascending: false })
+    .order("reviews_count", { ascending: false })
+    .limit(3);
+
+  let featuredWorkers: {
+    id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    city: string | null;
+    headline: string | null;
+    skills: string[];
+    rating: number;
+    reviews_count: number;
+  }[] = [];
+
+  if (topWorkerProfiles && topWorkerProfiles.length > 0) {
+    const ids = topWorkerProfiles.map((w) => w.id);
+    const { data: peopleProfiles } = await supabase.from("profiles").select("id, full_name, avatar_url, city").in("id", ids);
+    const peopleById = Object.fromEntries((peopleProfiles ?? []).map((p) => [p.id, p]));
+
+    featuredWorkers = topWorkerProfiles.map((w) => ({
+      id: w.id,
+      full_name: peopleById[w.id]?.full_name ?? null,
+      avatar_url: peopleById[w.id]?.avatar_url ?? null,
+      city: peopleById[w.id]?.city ?? null,
+      headline: w.headline,
+      skills: (w.skills || "").split(",").map((s: string) => s.trim()).filter(Boolean),
+      rating: w.rating,
+      reviews_count: w.reviews_count,
+    }));
+  }
 
   return (
     <>
@@ -187,26 +205,27 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {popularCategories.map((category) => {
-              const Icon = categoryIcons[category.icon] ?? Hammer;
-              return (
+          {popularCategories.length === 0 ? (
+            <p className="text-sm text-ink-faint">Ainda não há categorias disponíveis.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {popularCategories.map((category) => (
                 <Link
                   key={category.id}
-                  href={`/categorias?cat=${category.slug}`}
+                  href={`/trabalhos?categoria=${encodeURIComponent(category.name)}`}
                   className="group flex flex-col gap-3 rounded-md border border-border bg-white p-5 transition-colors hover:border-teal-500/60 hover:shadow-card"
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-sm bg-navy-50 text-navy-700 group-hover:bg-teal-50 group-hover:text-teal-600">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
+                    <Tag className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-ink">{category.name}</p>
                     <p className="text-xs text-ink-faint">{category.jobsCount} trabalhos</p>
                   </div>
                 </Link>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -276,23 +295,59 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Trabalhadores em destaque */}
-      <section className="py-16 sm:py-20">
-        <div className="container-kazigo">
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold sm:text-3xl">Trabalhadores em destaque</h2>
-              <p className="mt-1 text-sm text-ink-faint">Profissionais bem avaliados prontos para ajudar.</p>
+      {/* Trabalhadores em destaque — só aparece quando há gente com avaliações reais */}
+      {featuredWorkers.length > 0 && (
+        <section className="py-16 sm:py-20">
+          <div className="container-kazigo">
+            <div className="mb-8 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold sm:text-3xl">Trabalhadores em destaque</h2>
+                <p className="mt-1 text-sm text-ink-faint">Profissionais bem avaliados prontos para ajudar.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredWorkers.map((worker) => (
+                <Link
+                  key={worker.id}
+                  href={`/trabalhadores/${worker.id}`}
+                  className="flex flex-col gap-4 rounded-md border border-border bg-white p-5 transition-colors hover:border-teal-500/60 hover:shadow-card"
+                >
+                  <div className="flex items-start gap-3">
+                    <Avatar name={worker.full_name || "Trabalhador"} src={worker.avatar_url ?? undefined} size="lg" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-ink">{worker.full_name || "Trabalhador"}</p>
+                      {worker.headline && <p className="text-sm text-ink-soft">{worker.headline}</p>}
+                      {worker.city && (
+                        <span className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-faint">
+                          <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                          {worker.city}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {worker.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {worker.skills.slice(0, 3).map((skill) => (
+                        <Badge key={skill} tone="teal">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1 border-t border-border pt-3 text-sm">
+                    <Star className="h-4 w-4 fill-orange-500 text-orange-500" aria-hidden="true" />
+                    <span className="font-semibold text-ink">{worker.rating.toFixed(1)}</span>
+                    <span className="text-ink-faint">({worker.reviews_count} avaliações)</span>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredWorkers.map((worker) => (
-              <WorkerCard key={worker.id} worker={worker} />
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Como funciona */}
       <section className="bg-navy-700 py-16 text-white sm:py-20">

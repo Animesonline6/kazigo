@@ -25,15 +25,26 @@ function formatRelative(dateStr: string) {
   return `há ${days} dias`;
 }
 
-export default async function TrabalhosPage() {
+export default async function TrabalhosPage({
+  searchParams,
+}: {
+  searchParams: { categoria?: string };
+}) {
   const supabase = createClient();
+  const categoriaFiltro = searchParams.categoria || null;
 
-  const { data: jobs } = await supabase
+  let jobsQuery = supabase
     .from("jobs")
     .select("id, title, description, category, city, remote, budget_min, budget_max, applications_count, created_at, status")
     .eq("status", "aberto")
     .eq("approval_status", "aprovado")
     .order("created_at", { ascending: false });
+
+  if (categoriaFiltro) {
+    jobsQuery = jobsQuery.eq("category", categoriaFiltro);
+  }
+
+  const { data: jobs } = await jobsQuery;
 
   const {
     data: { user },
@@ -66,10 +77,19 @@ export default async function TrabalhosPage() {
         </Link>
       </div>
 
+      {categoriaFiltro && (
+        <div className="mb-6 flex items-center gap-2">
+          <Badge tone="navy">{categoriaFiltro}</Badge>
+          <Link href="/trabalhos" className="text-xs font-medium text-ink-faint hover:text-danger">
+            Limpar filtro
+          </Link>
+        </div>
+      )}
+
       {!jobs || jobs.length === 0 ? (
         <EmptyState
-          title="Ainda não há trabalhos publicados"
-          description="Sê o primeiro a publicar uma oportunidade na plataforma."
+          title={categoriaFiltro ? `Sem trabalhos em "${categoriaFiltro}" por agora` : "Ainda não há trabalhos publicados"}
+          description={categoriaFiltro ? "Experimenta ver todos os trabalhos ou outra categoria." : "Sê o primeiro a publicar uma oportunidade na plataforma."}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
